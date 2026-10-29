@@ -753,14 +753,32 @@ html, body {
 @media print {
   /* Hide UI elements */
   .sidebar, .topbar, .mobile-nav, .demo-banner, .btn, .no-print,
-  .toast-container, .modal-overlay, .search-filter-box {
+  .toast-container, .search-filter-box {
     display: none !important;
   }
 
   body, html {
     background: white !important;
     color: black !important;
-    font-size: 11pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Allow document in preview modal to print clearly */
+  .modal-overlay {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+
+  .modal-content {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 
   .main-content {

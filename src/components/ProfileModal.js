@@ -72,6 +72,14 @@ export function openProfileModal() {
             </select>
           </div>
 
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">
+              Foto Profil Guru (Tautan / URL Gambar)
+            </label>
+            <input type="text" id="prof-photo" class="form-input" placeholder="Contoh: https://... (atau kosongkan untuk foto standar)" value="${user.Foto || user.foto || ''}" style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+            <span style="font-size: 0.75rem; color: #64748b; display: block; margin-top: 2px;">Foto ini akan muncul di kartu kelas Anda pada Portal Siswa.</span>
+          </div>
+
           <div class="form-group" style="margin-bottom: 1.25rem;">
             <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">
               Nomor WhatsApp / HP
@@ -98,6 +106,7 @@ export function openProfileModal() {
     const nipVal = document.getElementById('prof-nip').value.trim();
     const classVal = document.getElementById('prof-class').value;
     const phoneVal = document.getElementById('prof-phone').value.trim();
+    const photoVal = document.getElementById('prof-photo').value.trim();
 
     if (!nameVal || !emailVal) {
       toast.warning("Nama dan email wajib diisi.");
@@ -110,6 +119,7 @@ export function openProfileModal() {
         email: emailVal,
         nip: nipVal,
         phone: phoneVal,
+        foto: photoVal,
         kelas_id: classVal
       });
       toast.success("Profil Anda berhasil diperbarui!");

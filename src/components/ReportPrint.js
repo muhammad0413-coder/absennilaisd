@@ -97,21 +97,52 @@ export async function triggerPrintReport(reportTitle, classLabel, contentHtml) {
  * Mencetak Dokumen Lanskap Autentik (Format Resmi Sekolah)
  */
 export function triggerPrintAuthenticLandscape(sheetHtml) {
-  const printContainer = document.createElement('div');
-  printContainer.id = 'active-print-container';
-  printContainer.className = 'print-only-container authentic-school-sheet';
-  printContainer.style.width = '100%';
+  const printFrame = document.createElement('iframe');
+  printFrame.style.position = 'fixed';
+  printFrame.style.right = '0';
+  printFrame.style.bottom = '0';
+  printFrame.style.width = '0';
+  printFrame.style.height = '0';
+  printFrame.style.border = '0';
+  document.body.appendChild(printFrame);
 
-  printContainer.innerHTML = sheetHtml;
-  document.body.appendChild(printContainer);
-
-  window.print();
+  const doc = printFrame.contentWindow.document;
+  doc.open();
+  doc.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Dokumen Resmi SDN KESILIR 02</title>
+        <style>
+          @page { size: landscape; margin: 8mm 10mm; }
+          body { font-family: 'Times New Roman', serif; margin: 0; padding: 10px; color: #000; background: #fff; }
+          table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+          th, td { border: 1px solid #000; padding: 2px 3px; }
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          }
+        </style>
+      </head>
+      <body>
+        ${sheetHtml}
+      </body>
+    </html>
+  `);
+  doc.close();
 
   setTimeout(() => {
-    if (printContainer.parentNode) {
-      document.body.removeChild(printContainer);
+    try {
+      printFrame.contentWindow.focus();
+      printFrame.contentWindow.print();
+    } catch (e) {
+      console.warn("Print frame fallback:", e);
+      window.print();
+    } finally {
+      setTimeout(() => {
+        if (printFrame.parentNode) document.body.removeChild(printFrame);
+      }, 2500);
     }
-  }, 1000);
+  }, 350);
 }
 
 /**

@@ -179,6 +179,8 @@ export async function updateCurrentUserProfile(updatedData = {}) {
     email: newEmail,
     nip: updatedData.nip !== undefined ? updatedData.nip.trim() : (currentUser.nip || ''),
     phone: updatedData.phone !== undefined ? updatedData.phone.trim() : (currentUser.phone || ''),
+    foto: updatedData.foto !== undefined ? updatedData.foto.trim() : (currentUser.foto || ''),
+    Foto: updatedData.foto !== undefined ? updatedData.foto.trim() : (currentUser.Foto || currentUser.foto || ''),
     kelas_id: updatedData.kelas_id || currentUser.kelas_id
   };
 
@@ -196,6 +198,7 @@ export async function updateCurrentUserProfile(updatedData = {}) {
         Email: currentUser.email,
         NIP: currentUser.nip,
         Phone: currentUser.phone,
+        Foto: currentUser.Foto,
         Kelas_Ditugaskan: currentUser.kelas_id,
         Updated_At: new Date().toISOString()
       };
@@ -206,6 +209,7 @@ export async function updateCurrentUserProfile(updatedData = {}) {
         Email: currentUser.email,
         NIP: currentUser.nip,
         Phone: currentUser.phone,
+        Foto: currentUser.Foto,
         Role: currentUser.role,
         Kelas_Ditugaskan: currentUser.kelas_id,
         Status: "Aktif",

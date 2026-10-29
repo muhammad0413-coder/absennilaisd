@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
  * SISTEM INFORMASI ABSENSI DAN PENILAIAN SISWA SD
- * PORTAL UTAMA SISWA (SATU LINK RESMI DENGAN AKSES GURU TERSEMBUNYI)
+ * PORTAL UTAMA SISWA (SATU LINK RESMI - WALI KELAS & FOTO PROFIL KELAS 1-6)
  * (src/pages/StudentPublicPage.js)
  * ==============================================================================
  */
@@ -14,7 +14,45 @@ import { toast } from '../components/Toast.js';
 
 export async function renderStudentPublicPage() {
   const settings = await getSettings();
-  const schoolName = settings.nama_sekolah || "SD NEGERI HARAPAN BANGSA";
+  const schoolName = settings.nama_sekolah || "SDN KESILIR 02";
+  const users = await getUsers();
+
+  // Buat 6 Kartu Kelas lengkap dengan Foto Profil & Identitas Wali Kelas masing-masing
+  const classCardsHtml = [1, 2, 3, 4, 5, 6].map(num => {
+    const classKey = `kelas_${num}`;
+    const teacher = users.find(u => u.Kelas_Ditugaskan === classKey && (u.Role === 'guru' || !u.Role)) || {
+      Nama: num === 1 ? 'Suci Ayu Ningrum, S.Pd.' : (num === 5 ? 'Dra. Ratna Suminar' : `Guru Kelas ${num}`),
+      NIP: num === 1 ? '199410142023212000' : (num === 5 ? '195701201992032001' : '-'),
+      Foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces"
+    };
+
+    const teacherPhoto = teacher.Foto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces";
+
+    return `
+      <div class="card btn-class-choice" data-class="${classKey}" style="cursor: pointer; text-align: center; padding: 1.25rem 1rem; border-radius: 14px; border: 2px solid #e2e8f0; transition: all 0.25s; position: relative; background: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);" onmouseover="this.style.borderColor='#1e3a8a'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 10px 15px -3px rgba(30,58,138,0.15)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.transform='none'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.05)';">
+        <!-- Foto Profil Wali Kelas -->
+        <div style="width: 80px; height: 80px; margin: 0 auto 0.75rem; position: relative;">
+          <img src="${teacherPhoto}" alt="Foto Wali Kelas ${num}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid #0284c7; box-shadow: 0 4px 8px rgba(0,0,0,0.12);" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(teacher.Nama)}&background=1e3a8a&color=fff&size=200'">
+          <span style="position: absolute; bottom: 2px; right: 2px; background: #16a34a; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white;" title="Wali Kelas Aktif"></span>
+        </div>
+
+        <!-- Identitas Kelas & Wali Kelas -->
+        <div style="display: inline-block; background: #eff6ff; color: #1e3a8a; font-size: 0.75rem; font-weight: 800; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; margin-bottom: 0.35rem;">
+          KELAS ${num}
+        </div>
+        <h4 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0; line-height: 1.25;">
+          ${teacher.Nama}
+        </h4>
+        <p style="font-size: 0.72rem; color: #64748b; margin: 0 0 0.85rem 0;">
+          NIP. ${teacher.NIP || '-'}
+        </p>
+
+        <button class="btn btn-outline btn-sm" style="width: 100%; font-size: 0.8rem; font-weight: 700; border-radius: 8px; pointer-events: none;">
+          Buka Absen &amp; Nilai ➔
+        </button>
+      </div>
+    `;
+  }).join('');
 
   return `
     <div style="min-height: 100vh; background: #f8fafc; display: flex; flex-direction: column; font-family: var(--font-sans);">
@@ -57,73 +95,65 @@ export async function renderStudentPublicPage() {
             </div>
           </div>
         </div>
+
         <!-- Banner Portal -->
-        <div style="text-align: center; margin-bottom: 1.75rem; background: linear-gradient(135deg, #1e3a8a, #0284c7); color: white; padding: 1.75rem 1rem; border-radius: 16px; box-shadow: 0 4px 12px rgba(30, 58, 138, 0.15);">
-          <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.35rem;">
-            Portal Absensi &amp; Nilai Siswa
+        <div style="text-align: center; margin-bottom: 1.5rem; background: linear-gradient(135deg, #1e3a8a, #0284c7); color: white; padding: 1.5rem 1rem; border-radius: 14px; box-shadow: 0 4px 12px rgba(30, 58, 138, 0.15);">
+          <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.25rem;">
+            Portal Absensi &amp; Nilai Siswa (Kelas 1 – 6)
           </h2>
-          <p style="font-size: 0.95rem; opacity: 0.95; max-width: 600px; margin: 0 auto;">
-            Pilih atau ketik kelas siswa di bawah untuk langsung melihat rekapitulasi kehadiran dan laporan nilai kelas secara transparan.
+          <p style="font-size: 0.9rem; opacity: 0.95; max-width: 600px; margin: 0 auto;">
+            Pilih kelas di bawah untuk melihat profil wali kelas serta rekapitulasi kehadiran dan laporan nilai kelas secara transparan.
           </p>
         </div>
 
-        <!-- PILIHAN KELAS LANGSUNG (1 - 6) -->
-        <div class="card" style="margin-bottom: 1.5rem; text-align: center; padding: 1.5rem 1.25rem;">
-          <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 0.35rem;">
-            PILIH KELAS SISWA (1 – 6):
-          </h3>
-          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.25rem;">
-            Klik salah satu tombol kelas atau ketik nomor kelas di kotak input:
-          </p>
+        <!-- PILIHAN 6 KELAS BESERTA FOTO PROFIL WALI KELAS -->
+        <div style="margin-bottom: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">
+              👥 DAFTAR KELAS &amp; WALI KELAS:
+            </h3>
 
-          <!-- 6 Tombol Kelas -->
-          <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.25rem;">
-            <button class="btn btn-outline btn-class-choice" data-class="kelas_1" style="font-size: 1.05rem; font-weight: 700; padding: 0.6rem 1.25rem; min-width: 110px;">
-              Kelas 1
-            </button>
-            <button class="btn btn-outline btn-class-choice" data-class="kelas_2" style="font-size: 1.05rem; font-weight: 700; padding: 0.6rem 1.25rem; min-width: 110px;">
-              Kelas 2
-            </button>
-            <button class="btn btn-outline btn-class-choice" data-class="kelas_3" style="font-size: 1.05rem; font-weight: 700; padding: 0.6rem 1.25rem; min-width: 110px;">
-              Kelas 3
-            </button>
-            <button class="btn btn-outline btn-class-choice" data-class="kelas_4" style="font-size: 1.05rem; font-weight: 700; padding: 0.6rem 1.25rem; min-width: 110px;">
-              Kelas 4
-            </button>
-            <button class="btn btn-outline btn-class-choice" data-class="kelas_5" style="font-size: 1.05rem; font-weight: 700; padding: 0.6rem 1.25rem; min-width: 110px;">
-              Kelas 5
-            </button>
-            <button class="btn btn-outline btn-class-choice" data-class="kelas_6" style="font-size: 1.05rem; font-weight: 700; padding: 0.6rem 1.25rem; min-width: 110px;">
-              Kelas 6
-            </button>
+            <!-- Input Cepat Angka Kelas -->
+            <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: white; padding: 0.4rem 0.85rem; border-radius: 10px; border: 1px solid #cbd5e1;">
+              <span style="font-size: 0.8rem; font-weight: 600; color: #475569;">Ketik Angka Kelas:</span>
+              <input type="number" id="input-quick-class" min="1" max="6" placeholder="1-6" style="width: 55px; padding: 0.3rem; text-align: center; font-weight: 800; font-size: 1rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+              <button id="btn-submit-quick-class" class="btn btn-primary btn-sm" style="padding: 0.35rem 0.75rem;">Lihat ➔</button>
+            </div>
           </div>
 
-          <!-- Input Cepat Angka Kelas -->
-          <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 10px;">
-            <span style="font-size: 0.85rem; font-weight: 600; color: #475569;">Ketik Angka Kelas:</span>
-            <input type="number" id="input-quick-class" min="1" max="6" placeholder="1-6" style="width: 70px; padding: 0.4rem; text-align: center; font-weight: 800; font-size: 1.1rem; border: 1px solid #cbd5e1; border-radius: 6px;">
-            <button id="btn-submit-quick-class" class="btn btn-primary btn-sm">Lihat ➔</button>
+          <!-- Grid 6 Kartu Kelas -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem;">
+            ${classCardsHtml}
           </div>
         </div>
 
         <!-- TAMPILAN DATA KELAS YANG DIPILIH -->
         <div id="section-class-data" style="display: none;">
-          <!-- Header Kelas Terpilih & Tab Switcher -->
-          <div class="card" style="margin-bottom: 1.25rem; padding: 1rem 1.25rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-              <div>
-                <span class="badge badge-success" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Aktif Ditampilkan</span>
-                <h3 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0;" id="title-active-class-label">
-                  DATA KELAS 5
-                </h3>
+          <!-- KARTU PROFIL WALI KELAS TERPILIH -->
+          <div class="card" style="margin-bottom: 1.25rem; padding: 1.25rem 1.5rem; background: linear-gradient(135deg, #f0fdf4, #eff6ff); border: 2px solid #93c5fd;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+              <div style="display: flex; align-items: center; gap: 1.25rem;">
+                <img id="selected-teacher-photo" src="" alt="Foto Wali Kelas" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover; border: 3px solid #1e3a8a; box-shadow: 0 4px 6px rgba(0,0,0,0.12);" onerror="this.src='https://ui-avatars.com/api/?name=Wali+Kelas&background=1e3a8a&color=fff&size=200'">
+                <div>
+                  <span class="badge badge-success" style="font-size: 0.75rem; font-weight: 700; margin-bottom: 0.25rem;">WALI KELAS RESMI</span>
+                  <h3 style="font-size: 1.25rem; font-weight: 800; color: #1e3a8a; margin: 0;" id="selected-teacher-name">
+                    Nama Wali Kelas
+                  </h3>
+                  <p style="font-size: 0.85rem; color: #475569; margin: 2px 0 0 0;" id="selected-teacher-nip">
+                    NIP. -
+                  </p>
+                  <p style="font-size: 0.75rem; color: #64748b; margin: 2px 0 0 0;" id="selected-teacher-role">
+                    Wali Kelas SDN Kesilir 02
+                  </p>
+                </div>
               </div>
 
               <!-- Dua Tab Tampilan: Absen (Gambar 1) & Nilai (Gambar 2) -->
-              <div style="display: flex; gap: 0.5rem; background: #f1f5f9; padding: 4px; border-radius: 8px;">
-                <button class="btn btn-sm btn-primary" id="tab-btn-absen" style="font-weight: 600;">
+              <div style="display: flex; gap: 0.5rem; background: white; padding: 5px; border-radius: 10px; border: 1px solid #cbd5e1;">
+                <button class="btn btn-sm btn-primary" id="tab-btn-absen" style="font-weight: 700;">
                   📋 1. Tampilan Absen (Gambar 1)
                 </button>
-                <button class="btn btn-sm btn-outline" id="tab-btn-nilai" style="font-weight: 600; border: none;">
+                <button class="btn btn-sm btn-outline" id="tab-btn-nilai" style="font-weight: 700; border: none;">
                   📝 2. Tampilan Nilai (Gambar 2)
                 </button>
               </div>
@@ -211,11 +241,16 @@ export function attachStudentPublicEvents() {
   let cachedAttHtml = "";
   let cachedGradesHtml = "";
 
-  const classButtons = document.querySelectorAll('.btn-class-choice');
+  const classCards = document.querySelectorAll('.btn-class-choice');
   const quickInput = document.getElementById('input-quick-class');
   const btnQuick = document.getElementById('btn-submit-quick-class');
   const sectionClassData = document.getElementById('section-class-data');
-  const titleClassLabel = document.getElementById('title-active-class-label');
+
+  // Info Wali Kelas Terpilih
+  const selectedTeacherPhoto = document.getElementById('selected-teacher-photo');
+  const selectedTeacherName = document.getElementById('selected-teacher-name');
+  const selectedTeacherNip = document.getElementById('selected-teacher-nip');
+  const selectedTeacherRole = document.getElementById('selected-teacher-role');
 
   const tabBtnAbsen = document.getElementById('tab-btn-absen');
   const tabBtnNilai = document.getElementById('tab-btn-nilai');
@@ -241,34 +276,49 @@ export function attachStudentPublicEvents() {
     const classNum = classKey.replace('kelas_', '');
     const classLabel = CLASS_LABELS[classKey] || `Kelas ${classNum}`;
 
-    // Update tampilan tombol
-    classButtons.forEach(b => {
-      if (b.getAttribute('data-class') === classKey) {
-        b.className = 'btn btn-primary btn-class-choice';
+    // Update highlight kartu kelas
+    classCards.forEach(c => {
+      if (c.getAttribute('data-class') === classKey) {
+        c.style.borderColor = '#1e3a8a';
+        c.style.background = '#f0f9ff';
       } else {
-        b.className = 'btn btn-outline btn-class-choice';
+        c.style.borderColor = '#e2e8f0';
+        c.style.background = 'white';
       }
     });
 
     if (quickInput) quickInput.value = classNum;
-    if (titleClassLabel) titleClassLabel.textContent = `DATA ${classLabel.toUpperCase()}`;
     if (sectionClassData) sectionClassData.style.display = 'block';
 
     // Scroll mulus ke data kelas
     sectionClassData.scrollIntoView({ behavior: 'smooth' });
 
     // Muat data Absen (Gambar 1) dan Nilai (Gambar 2)
-    if (containerAtt) containerAtt.innerHTML = '<div style="text-align:center; padding: 2rem; color:#64748b;">Memuat data kehadiran...</div>';
-    if (containerGrades) containerGrades.innerHTML = '<div style="text-align:center; padding: 2rem; color:#64748b;">Memuat data nilai...</div>';
+    if (containerAtt) containerAtt.innerHTML = '<div style="text-align:center; padding: 2rem; color:#64748b;">Memuat data kehadiran kelas...</div>';
+    if (containerGrades) containerGrades.innerHTML = '<div style="text-align:center; padding: 2rem; color:#64748b;">Memuat data nilai kelas...</div>';
 
     const students = await getStudents(classKey, 'Aktif');
     const attendance = await getAttendance(classKey);
     const grades = await getGrades(classKey);
     const settings = await getSettings();
     const users = await getUsers();
+
+    // Data Wali Kelas
     const teacherAccount = users.find(u => u.Kelas_Ditugaskan === classKey && (u.Role === 'guru' || !u.Role));
-    const teacherName = teacherAccount?.Nama || (classNum === '1' ? 'Suci Ayu Ningrum, S.Pd.' : `Guru Kelas ${classNum}`);
-    const teacherNip = teacherAccount?.NIP || (classNum === '1' ? '199410142023212000' : '-');
+    const teacherName = teacherAccount?.Nama || (classNum === '1' ? 'Suci Ayu Ningrum, S.Pd.' : (classNum === '5' ? 'Dra. Ratna Suminar' : `Guru Kelas ${classNum}`));
+    const teacherNip = teacherAccount?.NIP || (classNum === '1' ? '199410142023212000' : (classNum === '5' ? '195701201992032001' : '-'));
+    const teacherPhoto = teacherAccount?.Foto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces";
+
+    // Update banner wali kelas terpilih
+    if (selectedTeacherPhoto) {
+      selectedTeacherPhoto.src = teacherPhoto;
+      selectedTeacherPhoto.onerror = () => {
+        selectedTeacherPhoto.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(teacherName)}&background=1e3a8a&color=fff&size=200`;
+      };
+    }
+    if (selectedTeacherName) selectedTeacherName.textContent = teacherName;
+    if (selectedTeacherNip) selectedTeacherNip.textContent = `NIP. ${teacherNip}`;
+    if (selectedTeacherRole) selectedTeacherRole.textContent = `Wali Kelas ${classNum} SDN Kesilir 02`;
 
     // 1. Render Gambar 1: Daftar Hadir 1-31
     cachedAttHtml = generateAttendanceMonthSheetHtml(students, attendance, "Bulan Ini", settings, classLabel, teacherName, teacherNip);
@@ -279,9 +329,9 @@ export function attachStudentPublicEvents() {
     if (containerGrades) containerGrades.innerHTML = cachedGradesHtml;
   };
 
-  classButtons.forEach(btn => {
-    btn.onclick = () => {
-      const cls = btn.getAttribute('data-class');
+  classCards.forEach(card => {
+    card.onclick = () => {
+      const cls = card.getAttribute('data-class');
       selectClassHandler(cls);
     };
   });
@@ -322,7 +372,7 @@ export function attachStudentPublicEvents() {
     };
   }
 
-  // Cetak Dokumen Langsung
+  // Cetak Dokumen Langsung via Iframe
   if (btnPrintAtt) {
     btnPrintAtt.onclick = () => {
       if (cachedAttHtml) triggerPrintAuthenticLandscape(cachedAttHtml);

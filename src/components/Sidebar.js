@@ -24,9 +24,6 @@ export function renderSidebar(currentRoute = '#dashboard') {
     <a href="#dashboard" class="sidebar-nav-link ${currentRoute === '#dashboard' || currentRoute === '' ? 'active' : ''}">
       <span>📊</span> <span>Dashboard</span>
     </a>
-    <a href="#student" class="sidebar-nav-link ${currentRoute === '#student' ? 'active' : ''}">
-      <span>🌐</span> <span>Lihat Portal Siswa</span>
-    </a>
   `;
 
   // 2. Data Siswa (Semua role - Read-only di website)
