@@ -34,8 +34,8 @@ export function renderLoginPage() {
         </form>
 
         <div style="margin-top: 1.5rem; text-align: center;">
-          <a href="#student" class="btn btn-outline btn-sm" style="width: 100%; justify-content: center; font-weight: 600;">
-            🌐 Kembali ke Portal Siswa
+          <a href="#" class="btn btn-outline btn-sm" style="width: 100%; justify-content: center; font-weight: 600;">
+            ← Kembali ke Halaman Utama
           </a>
         </div>
       </div>

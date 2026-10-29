@@ -148,7 +148,7 @@ export function triggerPrintAuthenticLandscape(sheetHtml) {
 /**
  * GENERATOR GAMBAR 1: DAFTAR HADIR SISWA BULANAN (TANGGAL 1 - 31)
  */
-export function generateAttendanceMonthSheetHtml(students, attendanceList, monthLabel, settings, classLabel, teacherName, teacherNip = "-") {
+export function generateAttendanceMonthSheetHtml(students, attendanceList, monthLabel, settings, classLabel, teacherName, teacherNip = "-", selectedYearMonth = null) {
   const schoolName = settings.nama_sekolah || "SDN KESILIR 02";
   const year = settings.tahun_pelajaran_aktif || "2026/2027";
   const headmaster = settings.nama_kepala_sekolah || "Abdullah Mahsar, S.Pd.";
@@ -165,7 +165,11 @@ export function generateAttendanceMonthSheetHtml(students, attendanceList, month
     const dayCells = Array.from({ length: 31 }, (_, dayIdx) => {
       const dayNum = dayIdx + 1;
       const dayStr = dayNum < 10 ? `0${dayNum}` : `${dayNum}`;
-      const rec = studentRecords.find(a => a.Tanggal && a.Tanggal.endsWith(`-${dayStr}`));
+      const rec = studentRecords.find(a => {
+        if (!a.Tanggal) return false;
+        if (selectedYearMonth && !a.Tanggal.startsWith(selectedYearMonth)) return false;
+        return a.Tanggal.endsWith(`-${dayStr}`);
+      });
 
       if (!rec) return `<td style="border: 1px solid #000; text-align: center; font-size: 8pt;">&nbsp;</td>`;
 
@@ -274,7 +278,7 @@ export function generateAttendanceMonthSheetHtml(students, attendanceList, month
 /**
  * GENERATOR GAMBAR 2: DAFTAR NILAI SEMESTER (KURIKULUM MERDEKA: FORMATIF TP1-4 & SUMATIF LM1-5)
  */
-export function generateGradesSemesterSheetHtml(students, gradesList, subject, semester, settings, classLabel, teacherName, teacherNip = "-") {
+export function generateGradesSemesterSheetHtml(students, gradesList, subject, semester, settings, classLabel, teacherName, teacherNip = "-", monthLabel = "") {
   const schoolName = settings.nama_sekolah || "SDN KESILIR 02";
   const headmaster = settings.nama_kepala_sekolah || "Abdullah Mahsar, S.Pd.";
   const nipHeadmaster = settings.nip_kepala_sekolah || "198306012014121000";
@@ -352,9 +356,10 @@ export function generateGradesSemesterSheetHtml(students, gradesList, subject, s
         </h4>
       </div>
 
-      <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 9.5pt; font-weight: bold;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 9.5pt; font-weight: bold; flex-wrap: wrap; gap: 8px;">
         <div>KELAS &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${classLabel}</div>
         <div>MATA PELAJARAN : ${subject || "Matematika"}</div>
+        ${monthLabel ? `<div>BULAN : ${monthLabel.toUpperCase()}</div>` : ''}
       </div>
 
       <!-- TABEL KURIKULUM MERDEKA PERSIS GAMBAR 2 -->

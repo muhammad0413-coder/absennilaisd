@@ -55,10 +55,9 @@ export async function navigateTo(hash = window.location.hash || '') {
     return;
   }
 
-  // Jika guru/staf yang sedang login ingin melihat Portal Siswa
+  // Jika pengguna sudah login mencoba membuka tampilan publik siswa: arahkan tetap di dashboard
   if (cleanHash === '#student') {
-    appContainer.innerHTML = await renderStudentPublicPage();
-    attachStudentPublicEvents();
+    window.location.hash = '#dashboard';
     return;
   }
 

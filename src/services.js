@@ -221,34 +221,35 @@ function generateInitialGrades(students) {
   return list;
 }
 
-// Helper: Inisialisasi Absensi Otentik Bulanan (Tanggal 1–31 Sesuai Blangko)
+// Helper: Inisialisasi Absensi Otentik Bulanan (Tanggal 1–31 Sesuai Blangko Gambar 1)
 function generateInitialAttendance(students) {
   const list = [];
-  const now = new Date();
-  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const months = ['2026-07', '2026-08', '2026-09', '2026-10', '2026-11', '2026-12'];
 
-  for (const s of students) {
-    for (let d = 1; d <= 25; d++) {
-      const dayStr = String(d).padStart(2, '0');
-      const dateStr = `${yearMonth}-${dayStr}`;
-      // Tentukan status kehadiran variatif realistis
-      let status = "Hadir";
-      if ((d === 4 || d === 18) && (s.NIS === "1002" || s.NIS === "5002")) status = "Sakit";
-      else if ((d === 11) && (s.NIS === "1005" || s.NIS === "5004")) status = "Izin";
+  for (const ym of months) {
+    for (const s of students) {
+      for (let d = 1; d <= 26; d++) {
+        const dayStr = String(d).padStart(2, '0');
+        const dateStr = `${ym}-${dayStr}`;
+        let status = "Hadir";
+        if ((d === 4 || d === 18) && (s.NIS === "1002" || s.NIS === "5002")) status = "Sakit";
+        else if ((d === 11) && (s.NIS === "1005" || s.NIS === "5004")) status = "Izin";
+        else if ((d === 22) && s.NIS === "5003") status = "Alpa";
 
-      list.push({
-        ID_Absensi: `ATT_${dateStr.replace(/-/g, '')}_${s.ID_Siswa}`,
-        Tanggal: dateStr,
-        Tahun_Pelajaran: "2026/2027",
-        Semester: "1 (Ganjil)",
-        Kelas: s.Kelas,
-        ID_Siswa: s.ID_Siswa,
-        NIS: s.NIS,
-        Nama_Siswa: s.Nama_Lengkap,
-        Status_Absensi: status,
-        Keterangan: status !== "Hadir" ? status : "",
-        Updated_At: new Date().toISOString()
-      });
+        list.push({
+          ID_Absensi: `ATT_${dateStr.replace(/-/g, '')}_${s.ID_Siswa}`,
+          Tanggal: dateStr,
+          Tahun_Pelajaran: "2026/2027",
+          Semester: "1 (Ganjil)",
+          Kelas: s.Kelas,
+          ID_Siswa: s.ID_Siswa,
+          NIS: s.NIS,
+          Nama_Siswa: s.Nama_Lengkap,
+          Status_Absensi: status,
+          Keterangan: status !== "Hadir" ? status : "",
+          Updated_At: new Date().toISOString()
+        });
+      }
     }
   }
   return list;

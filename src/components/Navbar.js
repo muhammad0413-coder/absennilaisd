@@ -71,7 +71,7 @@ export function attachNavbarEvents() {
     btnLogout.onclick = async () => {
       await logout();
       toast.info("Anda telah keluar dari sistem.");
-      window.location.hash = '#student';
+      window.location.hash = '#';
     };
   }
 

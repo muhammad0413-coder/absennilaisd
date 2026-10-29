@@ -1,23 +1,24 @@
-// Service Worker for Sistem Informasi Absensi & Penilaian SD
-const CACHE_NAME = 'sd-absen-nilai-v1';
+// Service Worker for Sistem Informasi Absensi & Penilaian SD SDN KESILIR 02
+const CACHE_NAME = 'sd-kesilir02-v5';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
-  '/icons/icon-192.svg',
-  '/icons/icon-512.svg'
+  '/logo-kanan.png',
+  '/logo-kiri.png'
 ];
 
-// Install: Cache essential shell assets only (never cache private student data)
+// Install: Cache essential shell assets
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(STATIC_ASSETS);
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
-// Activate: Clean up old caches
+// Activate: Clean up all old caches immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -28,11 +29,13 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: Network-first for dynamic content / API / Firestore, Cache-first for static assets
+// Fetch Strategy:
+// For navigation (HTML), always NETWORK-FIRST to ensure user sees latest updates immediately.
+// For offline fallback, use cached index.html.
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
-  // Do not intercept or cache POST/PUT/DELETE requests or Firebase/Google API calls
+  // Bypass non-GET, Firebase, external APIs
   if (
     event.request.method !== 'GET' ||
     requestUrl.origin.includes('firestore.googleapis.com') ||
@@ -43,7 +46,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle static app shell with stale-while-revalidate
+  const isNavigation = event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html');
+
+  if (isNavigation) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
+  // Stale-while-revalidate for static assets
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {
@@ -54,12 +74,7 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
-      }).catch(() => {
-        // If offline and request is HTML navigation, fallback to cached index.html
-        if (event.request.headers.get('accept')?.includes('text/html')) {
-          return caches.match('/index.html');
-        }
-      });
+      }).catch(() => cachedResponse);
 
       return cachedResponse || fetchPromise;
     })
