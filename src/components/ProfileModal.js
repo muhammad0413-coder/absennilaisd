@@ -104,17 +104,20 @@ export function openProfileModal() {
           <!-- Penugasan Kelas -->
           <div class="form-group" style="margin-bottom: 1rem;">
             <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">
-              Penugasan Kelas
+              Penugasan Kelas / Tampilkan di Web Siswa
             </label>
             <select id="prof-class" class="form-select" style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px;">
-              <option value="kelas_1" ${user.kelas_id === 'kelas_1' ? 'selected' : ''}>Kelas 1 (Fase A)</option>
-              <option value="kelas_2" ${user.kelas_id === 'kelas_2' ? 'selected' : ''}>Kelas 2 (Fase A)</option>
-              <option value="kelas_3" ${user.kelas_id === 'kelas_3' ? 'selected' : ''}>Kelas 3 (Fase B)</option>
-              <option value="kelas_4" ${user.kelas_id === 'kelas_4' ? 'selected' : ''}>Kelas 4 (Fase B)</option>
-              <option value="kelas_5" ${user.kelas_id === 'kelas_5' ? 'selected' : ''}>Kelas 5 (Fase C)</option>
-              <option value="kelas_6" ${user.kelas_id === 'kelas_6' ? 'selected' : ''}>Kelas 6 (Fase C)</option>
-              <option value="semua" ${user.kelas_id === 'semua' || !user.kelas_id ? 'selected' : ''}>Semua Kelas (Kepala Sekolah / Admin)</option>
+              <option value="semua" ${user.kelas_id === 'semua' || !user.kelas_id ? 'selected' : ''}>Semua Kelas (Terapkan Foto ke Seluruh Kelas 1–6 di Web Siswa)</option>
+              <option value="kelas_1" ${user.kelas_id === 'kelas_1' ? 'selected' : ''}>Kelas 1 (Wali Kelas 1)</option>
+              <option value="kelas_2" ${user.kelas_id === 'kelas_2' ? 'selected' : ''}>Kelas 2 (Wali Kelas 2)</option>
+              <option value="kelas_3" ${user.kelas_id === 'kelas_3' ? 'selected' : ''}>Kelas 3 (Wali Kelas 3)</option>
+              <option value="kelas_4" ${user.kelas_id === 'kelas_4' ? 'selected' : ''}>Kelas 4 (Wali Kelas 4)</option>
+              <option value="kelas_5" ${user.kelas_id === 'kelas_5' ? 'selected' : ''}>Kelas 5 (Wali Kelas 5)</option>
+              <option value="kelas_6" ${user.kelas_id === 'kelas_6' ? 'selected' : ''}>Kelas 6 (Wali Kelas 6)</option>
             </select>
+            <span style="font-size: 0.72rem; color: #16a34a; font-weight: 600; display: block; margin-top: 4px;">
+              ✓ Foto yang diunggah otomatis terbaca dan tampil pada kartu Wali Kelas di Web Siswa.
+            </span>
           </div>
 
           <!-- Nomor WhatsApp / HP -->
@@ -138,14 +141,49 @@ export function openProfileModal() {
   document.getElementById('btn-close-profile-modal').onclick = closeModal;
   document.getElementById('btn-cancel-profile').onclick = closeModal;
 
-  // File Upload Listener & Instant Preview
+  // Helper Kompresi Gambar ke Canvas (~15KB - 25KB, tidak pernah melebihi kuota storage)
+  const compressImage = (file, maxWidth = 260, maxHeight = 260, quality = 0.82) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Gagal membaca berkas gambar."));
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("Gagal mengurai gambar."));
+        img.onload = () => {
+          let w = img.width;
+          let h = img.height;
+          if (w > h) {
+            if (w > maxWidth) {
+              h = Math.round((h * maxWidth) / w);
+              w = maxWidth;
+            }
+          } else {
+            if (h > maxHeight) {
+              w = Math.round((w * maxHeight) / h);
+              h = maxHeight;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // File Upload Listener & Instant Preview dengan Kompresi Otomatis
   const photoInput = document.getElementById('prof-photo-file');
   const photoPreview = document.getElementById('prof-photo-preview');
   const photoData = document.getElementById('prof-photo-data');
   const btnResetPhoto = document.getElementById('btn-reset-photo');
 
   if (photoInput) {
-    photoInput.onchange = (e) => {
+    photoInput.onchange = async (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
 
@@ -154,19 +192,15 @@ export function openProfileModal() {
         return;
       }
 
-      if (file.size > 3 * 1024 * 1024) {
-        toast.warning("Ukuran foto maksimal 3MB.");
-        return;
+      try {
+        toast.info("Mengompresi dan menyiapkan foto profil...");
+        const compressedBase64 = await compressImage(file, 260, 260, 0.82);
+        if (photoPreview) photoPreview.src = compressedBase64;
+        if (photoData) photoData.value = compressedBase64;
+        toast.success("Foto profil siap disimpan! Klik 'Simpan Profil & Foto'.");
+      } catch (err) {
+        toast.error("Gagal memproses gambar: " + err.message);
       }
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64Url = event.target.result;
-        if (photoPreview) photoPreview.src = base64Url;
-        if (photoData) photoData.value = base64Url;
-        toast.info("Foto profil berhasil dimuat. Klik 'Simpan Profil' untuk menerapkan.");
-      };
-      reader.readAsDataURL(file);
     };
   }
 
@@ -181,34 +215,50 @@ export function openProfileModal() {
   }
 
   // Submit Handler
-  document.getElementById('form-edit-teacher-profile').onsubmit = async () => {
-    const nameVal = document.getElementById('prof-name').value.trim();
-    const emailVal = document.getElementById('prof-email').value.trim();
-    const nipVal = document.getElementById('prof-nip').value.trim();
-    const classVal = document.getElementById('prof-class').value;
-    const phoneVal = document.getElementById('prof-phone').value.trim();
-    const photoVal = (photoData ? photoData.value.trim() : '') || currentPhoto;
+  const form = document.getElementById('form-edit-teacher-profile');
+  const btnSave = document.getElementById('btn-save-profile');
 
-    if (!nameVal || !emailVal) {
-      toast.warning("Nama dan email wajib diisi.");
-      return;
-    }
+  if (form) {
+    form.onsubmit = async () => {
+      const nameVal = document.getElementById('prof-name').value.trim();
+      const emailVal = document.getElementById('prof-email').value.trim();
+      const nipVal = document.getElementById('prof-nip').value.trim();
+      const classVal = document.getElementById('prof-class').value;
+      const phoneVal = document.getElementById('prof-phone').value.trim();
+      const photoVal = (photoData ? photoData.value.trim() : '') || currentPhoto;
 
-    try {
-      await updateCurrentUserProfile({
-        displayName: nameVal,
-        email: emailVal,
-        nip: nipVal,
-        phone: phoneVal,
-        foto: photoVal,
-        Foto: photoVal,
-        kelas_id: classVal
-      });
-      toast.success("Profil dan foto Anda berhasil diperbarui!");
-      closeModal();
-      window.location.reload();
-    } catch (err) {
-      toast.error(err.message || "Gagal menyimpan profil.");
-    }
-  };
+      if (!nameVal || !emailVal) {
+        toast.warning("Nama dan email wajib diisi.");
+        return;
+      }
+
+      if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.innerHTML = "⏳ Menyimpan Profil...";
+      }
+
+      try {
+        await updateCurrentUserProfile({
+          displayName: nameVal,
+          email: emailVal,
+          nip: nipVal,
+          phone: phoneVal,
+          foto: photoVal,
+          Foto: photoVal,
+          kelas_id: classVal
+        });
+        toast.success("Profil dan foto Anda berhasil disimpan!");
+        closeModal();
+        setTimeout(() => {
+          window.location.reload();
+        }, 300);
+      } catch (err) {
+        toast.error(err.message || "Gagal menyimpan profil.");
+        if (btnSave) {
+          btnSave.disabled = false;
+          btnSave.innerHTML = "💾 Simpan Profil &amp; Foto";
+        }
+      }
+    };
+  }
 }

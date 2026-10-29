@@ -22,22 +22,23 @@ export async function renderStudentPublicPage() {
   const settings = await getSettings();
   const schoolName = settings.nama_sekolah || "SDN KESILIR 02";
   const users = await getUsers();
+  const customGlobalPhoto = localStorage.getItem('sd_custom_teacher_photo');
+  const customUser = users.find(u => u.Foto && !u.Foto.includes('unsplash.com'));
 
   // 6 Kartu Kelas lengkap dengan Foto Profil & Identitas Wali Kelas masing-masing
   const classCardsHtml = [1, 2, 3, 4, 5, 6].map(num => {
     const classKey = `kelas_${num}`;
-    const teacher = users.find(u => u.Kelas_Ditugaskan === classKey && (u.Role === 'guru' || !u.Role)) || {
-      Nama: num === 1 ? 'Suci Ayu Ningrum, S.Pd.' : (num === 5 ? 'Dra. Ratna Suminar' : `Guru Kelas ${num}`),
-      Foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces"
-    };
-
-    const teacherPhoto = teacher.Foto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces";
+    const teacher = users.find(u => u.Kelas_Ditugaskan === classKey);
+    const teacherName = teacher?.Nama || (customUser && customUser.Kelas_Ditugaskan === 'semua' ? customUser.Nama : (num === 1 ? 'Suci Ayu Ningrum, S.Pd.' : (num === 5 ? 'Dra. Ratna Suminar' : `Guru Kelas ${num}`)));
+    const teacherPhoto = (teacher?.Foto && !teacher.Foto.includes('unsplash.com'))
+      ? teacher.Foto
+      : (customGlobalPhoto || customUser?.Foto || teacher?.Foto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces");
 
     return `
       <div class="card btn-class-choice" data-class="${classKey}" style="cursor: pointer; text-align: center; padding: 1.25rem 1rem; border-radius: 14px; border: 2px solid #e2e8f0; transition: all 0.25s; position: relative; background: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);" onmouseover="this.style.borderColor='#1e3a8a'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 10px 15px -3px rgba(30,58,138,0.15)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.transform='none'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.05)';">
         <!-- Foto Profil Wali Kelas -->
         <div style="width: 80px; height: 80px; margin: 0 auto 0.75rem; position: relative;">
-          <img src="${teacherPhoto}" alt="Foto Wali Kelas ${num}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid #0284c7; box-shadow: 0 4px 8px rgba(0,0,0,0.12);" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(teacher.Nama)}&background=1e3a8a&color=fff&size=200'">
+          <img src="${teacherPhoto}" alt="Foto Wali Kelas ${num}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid #0284c7; box-shadow: 0 4px 8px rgba(0,0,0,0.12);" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(teacherName)}&background=1e3a8a&color=fff&size=200'">
           <span style="position: absolute; bottom: 2px; right: 2px; background: #16a34a; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white;" title="Wali Kelas Aktif"></span>
         </div>
 
@@ -46,7 +47,7 @@ export async function renderStudentPublicPage() {
           KELAS ${num}
         </div>
         <h4 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0; line-height: 1.25;">
-          ${teacher.Nama}
+          ${teacherName}
         </h4>
         <p style="font-size: 0.75rem; color: #16a34a; font-weight: 600; margin: 0 0 0.85rem 0;">
           ✓ Wali Kelas Aktif
@@ -340,9 +341,13 @@ export function attachStudentPublicEvents() {
     const users = await getUsers();
 
     // Data Wali Kelas (NIP dirahasiakan untuk perlindungan privasi guru)
-    const teacherAccount = users.find(u => u.Kelas_Ditugaskan === activeClass && (u.Role === 'guru' || !u.Role));
-    const teacherName = teacherAccount?.Nama || (classNum === '1' ? 'Suci Ayu Ningrum, S.Pd.' : (classNum === '5' ? 'Dra. Ratna Suminar' : `Guru Kelas ${classNum}`));
-    const teacherPhoto = teacherAccount?.Foto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces";
+    const customGlobalPhoto = localStorage.getItem('sd_custom_teacher_photo');
+    const customUser = users.find(u => u.Foto && !u.Foto.includes('unsplash.com'));
+    const teacherAccount = users.find(u => u.Kelas_Ditugaskan === activeClass);
+    const teacherName = teacherAccount?.Nama || (customUser && customUser.Kelas_Ditugaskan === 'semua' ? customUser.Nama : (classNum === '1' ? 'Suci Ayu Ningrum, S.Pd.' : (classNum === '5' ? 'Dra. Ratna Suminar' : `Guru Kelas ${classNum}`)));
+    const teacherPhoto = (teacherAccount?.Foto && !teacherAccount.Foto.includes('unsplash.com'))
+      ? teacherAccount.Foto
+      : (customGlobalPhoto || customUser?.Foto || teacherAccount?.Foto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces");
 
     // Update kartu wali kelas terpilih
     if (selectedTeacherPhoto) {

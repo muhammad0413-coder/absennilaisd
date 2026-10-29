@@ -183,6 +183,25 @@ export async function loginWithEmailOnly(email) {
   return currentUser;
 }
 
+function safeLocalStorageSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (err) {
+    if (err.name === 'QuotaExceededError' || err.code === 22) {
+      console.warn("Storage quota exceeded, cleaning temporary cache...");
+      try {
+        localStorage.removeItem('sd_temp_cache');
+        localStorage.removeItem('sd_logs');
+        localStorage.setItem(key, value);
+      } catch (innerErr) {
+        console.error("Storage error:", innerErr);
+      }
+    } else {
+      console.error("Storage error:", err);
+    }
+  }
+}
+
 /**
  * Perbarui Profil Guru / Staf Aktif
  * Memungkinkan pengubahan Nama Lengkap, Email Akun, NIP, Nomor HP, dan Penugasan Kelas
@@ -204,8 +223,13 @@ export async function updateCurrentUserProfile(updatedData = {}) {
     kelas_id: updatedData.kelas_id || currentUser.kelas_id
   };
 
-  // 1. Simpan sesi aktif ke localStorage
-  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentUser));
+  // 1. Simpan sesi aktif ke localStorage secara aman
+  safeLocalStorageSet(AUTH_USER_KEY, JSON.stringify(currentUser));
+
+  // Simpan foto kustom global agar terbaca di portal siswa
+  if (currentUser.Foto && !currentUser.Foto.includes('unsplash.com')) {
+    safeLocalStorageSet('sd_custom_teacher_photo', currentUser.Foto);
+  }
 
   // 2. Perbarui juga di daftar master akun pengguna (sd_users_accounts)
   try {
@@ -230,13 +254,28 @@ export async function updateCurrentUserProfile(updatedData = {}) {
         NIP: currentUser.nip,
         Phone: currentUser.phone,
         Foto: currentUser.Foto,
-        Role: currentUser.role,
+        Role: currentUser.role || 'guru',
         Kelas_Ditugaskan: currentUser.kelas_id,
         Status: "Aktif",
         Updated_At: new Date().toISOString()
       });
     }
-    localStorage.setItem('sd_users_accounts', JSON.stringify(users));
+
+    // Jika pengguna memilih kelas tertentu atau semua kelas, sinkronkan foto ke Wali Kelas di web siswa
+    if (currentUser.Foto && !currentUser.Foto.includes('unsplash.com')) {
+      for (const u of users) {
+        if (currentUser.kelas_id === 'semua' || !currentUser.kelas_id) {
+          if (!u.Foto || u.Foto.includes('unsplash.com')) {
+            u.Foto = currentUser.Foto;
+          }
+        } else if (u.Kelas_Ditugaskan === currentUser.kelas_id) {
+          u.Foto = currentUser.Foto;
+          u.Nama = currentUser.displayName;
+        }
+      }
+    }
+
+    safeLocalStorageSet('sd_users_accounts', JSON.stringify(users));
   } catch (e) {
     console.warn("Gagal memperbarui sd_users_accounts:", e);
   }

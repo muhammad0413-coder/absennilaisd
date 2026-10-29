@@ -234,6 +234,23 @@ function generateInitialGrades(students) {
           Updated_At: new Date().toISOString()
         });
       }
+
+      // SAS (Sumatif Akhir Semester)
+      list.push({
+        ID_Nilai: `GRD_${s.ID_Siswa}_${mapel}_SAS`,
+        ID_Siswa: s.ID_Siswa,
+        NIS: s.NIS,
+        Nama_Siswa: s.Nama_Lengkap,
+        Kelas: s.Kelas,
+        Mata_Pelajaran: mapel,
+        Jenis_Asesmen: "Sumatif Akhir Semester",
+        Lingkup_Materi: "Sumatif Akhir Semester",
+        Deskripsi: "SAS Semester 1",
+        Nilai: scores[0] || 85,
+        Semester: "1 (Ganjil)",
+        Tahun_Pelajaran: "2026/2027",
+        Updated_At: new Date().toISOString()
+      });
     }
   }
   return list;
@@ -571,13 +588,16 @@ export async function saveGradesBatch(user, gradesList) {
     const semester = item.Semester || "1 (Ganjil)";
     const tahun = item.Tahun_Pelajaran || "2026/2027";
 
-    // Cek keberadaan nilai yang sama
+    // Cek keberadaan nilai yang sama secara presisi
     const existingIdx = allGrades.findIndex(g =>
-      g.ID_Siswa === studentId &&
-      g.Mata_Pelajaran === mapel &&
-      g.Jenis_Asesmen === jenis &&
-      g.Semester === semester &&
-      g.Tahun_Pelajaran === tahun
+      (item.ID_Nilai && g.ID_Nilai === item.ID_Nilai) ||
+      (g.ID_Siswa === studentId &&
+       g.Mata_Pelajaran === mapel &&
+       g.Jenis_Asesmen === jenis &&
+       g.Lingkup_Materi === (item.Lingkup_Materi || item.Nama_Penilaian || "") &&
+       g.Deskripsi === (item.Deskripsi || item.Keterangan || "") &&
+       g.Semester === semester &&
+       g.Tahun_Pelajaran === tahun)
     );
 
     const record = {

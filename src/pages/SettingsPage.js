@@ -227,39 +227,70 @@ export function attachSettingsEvents() {
     if (el) el.addEventListener('input', updatePreview);
   });
 
+  const compressLogo = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Gagal membaca file gambar."));
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("Gagal mengurai gambar logo."));
+        img.onload = () => {
+          let w = img.width;
+          let h = img.height;
+          const maxDim = 250;
+          if (w > h && w > maxDim) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          } else if (h > maxDim) {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/png', 0.85));
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   // Upload Logo Kiri
   const fileL = document.getElementById('file-sch-logol');
   if (fileL) {
-    fileL.onchange = (e) => {
+    fileL.onchange = async (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const base64 = ev.target.result;
+      try {
+        const base64 = await compressLogo(file);
         if (inputLogoL) inputLogoL.value = base64;
         if (prevImgL) prevImgL.src = base64;
         if (thumbL) thumbL.src = base64;
         toast.info("Logo kiri berhasil dimuat.");
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        toast.error("Gagal memproses logo kiri: " + err.message);
+      }
     };
   }
 
   // Upload Logo Kanan
   const fileR = document.getElementById('file-sch-logor');
   if (fileR) {
-    fileR.onchange = (e) => {
+    fileR.onchange = async (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const base64 = ev.target.result;
+      try {
+        const base64 = await compressLogo(file);
         if (inputLogoR) inputLogoR.value = base64;
         if (prevImgR) prevImgR.src = base64;
         if (thumbR) thumbR.src = base64;
         toast.info("Logo kanan berhasil dimuat.");
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        toast.error("Gagal memproses logo kanan: " + err.message);
+      }
     };
   }
 
