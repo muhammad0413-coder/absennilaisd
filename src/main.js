@@ -11,18 +11,21 @@ import { navigateTo } from './router.js';
 import { toast } from './components/Toast.js';
 import { fetchLatestStudentsIfConfigured } from './services.js';
 
-// 1. Registrasi Progressive Web App (PWA) Service Worker
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((reg) => {
-        reg.update();
-        console.log('[PWA] Service Worker aktif terdaftar:', reg.scope);
-      })
-      .catch((err) => {
-        console.warn('[PWA] Gagal mendaftarkan Service Worker:', err);
-      });
-  });
+// 1. Bersihkan & Hapus Service Worker Lama agar pembaruan selalu tampil langsung
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (let registration of registrations) {
+      registration.unregister();
+    }
+  }).catch(() => {});
+}
+
+if ('caches' in window) {
+  caches.keys().then((names) => {
+    for (let name of names) {
+      caches.delete(name);
+    }
+  }).catch(() => {});
 }
 
 // 2. Monitoring Status Jaringan Online / Offline

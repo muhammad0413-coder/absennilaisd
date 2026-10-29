@@ -276,6 +276,18 @@ export async function getStudents(kelas = null, status = 'Aktif') {
   if (!Array.isArray(allStudents) || allStudents.length === 0) {
     allStudents = INITIAL_MASTER_STUDENTS;
     localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(INITIAL_MASTER_STUDENTS));
+  } else {
+    // Sinkronisasi otomatis agar siswa awal (misal Kelas 5) tidak hilang jika browser memiliki data lama
+    let needsUpdate = false;
+    for (const initS of INITIAL_MASTER_STUDENTS) {
+      if (!allStudents.some(s => s.ID_Siswa === initS.ID_Siswa || (s.NIS === initS.NIS && String(s.Kelas) === String(initS.Kelas)))) {
+        allStudents.push(initS);
+        needsUpdate = true;
+      }
+    }
+    if (needsUpdate) {
+      localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(allStudents));
+    }
   }
 
   return allStudents.filter(s => {
@@ -283,6 +295,81 @@ export async function getStudents(kelas = null, status = 'Aktif') {
     if (status && status !== 'semua' && s.Status_Siswa !== status) return false;
     return true;
   });
+}
+
+/**
+ * Menyimpan data siswa baru atau memperbarui data siswa
+ * Dapat dilakukan langsung oleh Guru Kelas masing-masing atau Admin
+ */
+export async function saveStudent(user, studentData) {
+  if (!studentData.Nama_Lengkap || !studentData.NIS) {
+    throw new Error("Nama Lengkap dan NIS wajib diisi.");
+  }
+
+  let allStudents = await getStudents(null, 'semua');
+  const classNum = String(studentData.Kelas || (user?.kelas_id ? user.kelas_id.replace('kelas_', '') : '1')).replace('kelas_', '');
+  const idSiswa = studentData.ID_Siswa || `SIS_${classNum}_${studentData.NIS}`;
+
+  const existingIdx = allStudents.findIndex(s => s.ID_Siswa === idSiswa || (s.NIS === String(studentData.NIS).trim() && String(s.Kelas) === classNum));
+
+  const newObj = {
+    ID_Siswa: idSiswa,
+    NIS: String(studentData.NIS).trim(),
+    NISN: String(studentData.NISN || '').trim(),
+    Nama_Lengkap: studentData.Nama_Lengkap.trim().toUpperCase(),
+    Jenis_Kelamin: studentData.Jenis_Kelamin === 'P' ? 'P' : 'L',
+    Kelas: classNum,
+    Tempat_Lahir: studentData.Tempat_Lahir ? studentData.Tempat_Lahir.trim() : 'Jember',
+    Tanggal_Lahir: studentData.Tanggal_Lahir || '',
+    Nama_Orang_Tua: studentData.Nama_Orang_Tua ? studentData.Nama_Orang_Tua.trim() : '',
+    Nomor_Wali: studentData.Nomor_Wali ? studentData.Nomor_Wali.trim() : '',
+    Alamat: studentData.Alamat ? studentData.Alamat.trim() : '',
+    Tahun_Pelajaran: studentData.Tahun_Pelajaran || '2026/2027',
+    Status_Siswa: studentData.Status_Siswa || 'Aktif',
+    Updated_At: new Date().toISOString()
+  };
+
+  if (existingIdx >= 0) {
+    allStudents[existingIdx] = { ...allStudents[existingIdx], ...newObj };
+  } else {
+    allStudents.push(newObj);
+  }
+
+  localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(allStudents));
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await setDoc(doc(db, 'students', idSiswa), newObj, { merge: true });
+    } catch (e) {
+      console.warn("Firebase save student error:", e);
+    }
+  }
+
+  return { success: true, student: newObj };
+}
+
+/**
+ * Menonaktifkan atau mengubah status siswa (mutasi / pindah)
+ */
+export async function deactivateStudent(user, idSiswa, newStatus = "Pindah") {
+  let allStudents = await getStudents(null, 'semua');
+  const idx = allStudents.findIndex(s => s.ID_Siswa === idSiswa);
+  if (idx >= 0) {
+    allStudents[idx].Status_Siswa = newStatus;
+    allStudents[idx].Updated_At = new Date().toISOString();
+    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(allStudents));
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await setDoc(doc(db, 'students', idSiswa), allStudents[idx], { merge: true });
+      } catch (e) {
+        console.warn("Firebase deactivate student error:", e);
+      }
+    }
+
+    return { success: true, student: allStudents[idx] };
+  }
+  throw new Error("Siswa tidak ditemukan.");
 }
 
 /**
