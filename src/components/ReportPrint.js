@@ -270,7 +270,7 @@ export function generateAttendanceMonthSheetHtml(students, attendanceList, month
           <p style="margin: 0;">${city}, ${new Intl.DateTimeFormat('id-ID', { dateStyle: 'long' }).format(new Date())}</p>
           <p style="margin: 0 0 55px 0;">Guru Kelas ${classLabel}</p>
           <p style="margin: 0; font-weight: bold; text-decoration: underline;">${teacherName || "( ............................................ )"}</p>
-          <p style="margin: 0; font-size: 8.5pt;">NIP. ${teacherNip || '-'}</p>
+          ${teacherNip && teacherNip !== '-' ? `<p style="margin: 0; font-size: 8.5pt;">NIP. ${teacherNip}</p>` : ''}
         </div>
       </div>
     </div>
@@ -422,7 +422,7 @@ export function generateGradesSemesterSheetHtml(students, gradesList, subject, s
           <p style="margin: 0;">${city}, ${todayStr}</p>
           <p style="margin: 0 0 50px 0;">Wali Kelas,</p>
           <p style="margin: 0; font-weight: bold; text-decoration: underline;">${teacherName || "( ............................................ )"}</p>
-          <p style="margin: 0; font-size: 8.5pt;">NIP. ${teacherNip || '-'}</p>
+          ${teacherNip && teacherNip !== '-' ? `<p style="margin: 0; font-size: 8.5pt;">NIP. ${teacherNip}</p>` : ''}
         </div>
       </div>
     </div>

@@ -101,7 +101,7 @@ const INITIAL_SETTINGS = {
   tahun_pelajaran_aktif: "2026/2027",
   semester_aktif: "1 (Ganjil)",
   kkm_default: "75",
-  daftar_mata_pelajaran: "Pendidikan Pancasila,Bahasa Indonesia,Matematika,Ilmu Pengetahuan Alam dan Sosial (IPAS),Pendidikan Jasmani Olahraga dan Kesehatan (PJOK),Seni Budaya,Bahasa Inggris"
+  daftar_mata_pelajaran: "Pendidikan Pancasila,Bahasa Indonesia,Matematika,PJOK,PAI,Ilmu Pengetahuan Alam dan Sosial (IPAS),Seni Rupa,Bahasa Inggris"
 };
 
 export const INITIAL_USERS = [
@@ -190,43 +190,50 @@ function generateInitialGrades(students) {
     "1017": [70, 90, 80, 85, 82]
   };
 
-  for (const s of students) {
-    const scores = initialMap[s.NIS] || [75, 80, 85, 80, 80];
-    for (let lm = 1; lm <= 5; lm++) {
-      for (let tp = 1; tp <= 4; tp++) {
-        const val = (lm === 1 && tp === 1) ? scores[0] : ((lm === 1 && tp === 2) ? scores[1] : (scores[2] + ((tp % 2 === 0) ? 5 : 0)));
+  const subjectList = ["Matematika", "PJOK", "PAI", "Bahasa Indonesia", "Pendidikan Pancasila", "IPAS"];
+
+  for (const mapel of subjectList) {
+    for (const s of students) {
+      const baseScores = initialMap[s.NIS] || [75, 80, 85, 80, 80];
+      const offset = mapel === "PJOK" ? 5 : (mapel === "PAI" ? 3 : 0);
+      const scores = baseScores.map(val => Math.min(100, val + offset));
+
+      for (let lm = 1; lm <= 5; lm++) {
+        for (let tp = 1; tp <= 4; tp++) {
+          const val = (lm === 1 && tp === 1) ? scores[0] : ((lm === 1 && tp === 2) ? scores[1] : (scores[2] + ((tp % 2 === 0) ? 5 : 0)));
+          list.push({
+            ID_Nilai: `GRD_${s.ID_Siswa}_${mapel}_LM${lm}_TP${tp}`,
+            ID_Siswa: s.ID_Siswa,
+            NIS: s.NIS,
+            Nama_Siswa: s.Nama_Lengkap,
+            Kelas: s.Kelas,
+            Mata_Pelajaran: mapel,
+            Jenis_Asesmen: "Formatif",
+            Lingkup_Materi: `Materi ${lm}`,
+            Deskripsi: `Formatif LM${lm} TP${tp}`,
+            Nilai: Math.min(100, val),
+            Semester: "1 (Ganjil)",
+            Tahun_Pelajaran: "2026/2027",
+            Updated_At: new Date().toISOString()
+          });
+        }
+        // Sumatif LM
         list.push({
-          ID_Nilai: `GRD_${s.ID_Siswa}_LM${lm}_TP${tp}`,
+          ID_Nilai: `GRD_${s.ID_Siswa}_${mapel}_SUM_LM${lm}`,
           ID_Siswa: s.ID_Siswa,
           NIS: s.NIS,
           Nama_Siswa: s.Nama_Lengkap,
           Kelas: s.Kelas,
-          Mata_Pelajaran: "Matematika",
-          Jenis_Asesmen: "Formatif",
-          Lingkup_Materi: `Materi ${lm}`,
-          Deskripsi: `Formatif LM${lm} TP${tp}`,
-          Nilai: val,
+          Mata_Pelajaran: mapel,
+          Jenis_Asesmen: "Sumatif",
+          Lingkup_Materi: `Sumatif LM ${lm}`,
+          Deskripsi: `Sumatif LM ${lm}`,
+          Nilai: scores[lm - 1] || 80,
           Semester: "1 (Ganjil)",
           Tahun_Pelajaran: "2026/2027",
           Updated_At: new Date().toISOString()
         });
       }
-      // Sumatif LM
-      list.push({
-        ID_Nilai: `GRD_${s.ID_Siswa}_SUM_LM${lm}`,
-        ID_Siswa: s.ID_Siswa,
-        NIS: s.NIS,
-        Nama_Siswa: s.Nama_Lengkap,
-        Kelas: s.Kelas,
-        Mata_Pelajaran: "Matematika",
-        Jenis_Asesmen: "Sumatif",
-        Lingkup_Materi: `Sumatif LM ${lm}`,
-        Deskripsi: `Sumatif LM ${lm}`,
-        Nilai: scores[lm - 1] || 80,
-        Semester: "1 (Ganjil)",
-        Tahun_Pelajaran: "2026/2027",
-        Updated_At: new Date().toISOString()
-      });
     }
   }
   return list;
@@ -525,7 +532,7 @@ export async function calculateAttendanceRecap(kelas = null, startDate = null, e
  */
 export async function getGrades(kelas = null, mapel = null, jenis = null, semester = null) {
   let allGrades = JSON.parse(localStorage.getItem(STORAGE_KEYS.GRADES) || 'null');
-  if (!Array.isArray(allGrades) || allGrades.length === 0) {
+  if (!Array.isArray(allGrades) || allGrades.length === 0 || !allGrades.some(g => g.Mata_Pelajaran === 'PJOK')) {
     allGrades = generateInitialGrades(INITIAL_MASTER_STUDENTS);
     localStorage.setItem(STORAGE_KEYS.GRADES, JSON.stringify(allGrades));
   }
@@ -771,6 +778,27 @@ export async function getSyncStatusSummary() {
 
 export async function getSettings() {
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+  
+  // Bersihkan data demo lama jika ada di localStorage
+  if (saved.nama_sekolah === "SD NEGERI HARAPAN BANGSA" || (saved.alamat_sekolah && saved.alamat_sekolah.includes("Merdeka Belajar"))) {
+    saved.nama_sekolah = "SDN KESILIR 02";
+    saved.npsn = "20523456";
+    saved.alamat_sekolah = "Dsn. Tegal Baru, Ds. Kesilir, Kec. Wuluhan, Kab. Jember";
+    saved.kabupaten = "KABUPATEN JEMBER";
+    saved.dinas = "DINAS PENDIDIKAN";
+    saved.nama_kepala_sekolah = "Abdullah Mahsar, S.Pd.";
+    saved.nip_kepala_sekolah = "198306012014121000";
+    saved.logo_kiri = "/logo-kiri.png";
+    saved.logo_kanan = "/logo-kanan.png";
+    saved.logo_sekolah = "/logo-kanan.png";
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(saved));
+  }
+
+  if (!saved.daftar_mata_pelajaran || !saved.daftar_mata_pelajaran.includes("PJOK") || !saved.daftar_mata_pelajaran.includes("PAI")) {
+    saved.daftar_mata_pelajaran = "Pendidikan Pancasila,Bahasa Indonesia,Matematika,PJOK,PAI,Ilmu Pengetahuan Alam dan Sosial (IPAS),Seni Rupa,Bahasa Inggris";
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(saved));
+  }
+
   return {
     nama_sekolah: "SDN KESILIR 02",
     npsn: "20523456",
@@ -785,7 +813,7 @@ export async function getSettings() {
     tahun_pelajaran_aktif: "2026/2027",
     semester_aktif: "1 (Ganjil)",
     kkm_default: 75,
-    daftar_mata_pelajaran: "Pendidikan Pancasila,Bahasa Indonesia,Matematika,Ilmu Pengetahuan Alam dan Sosial (IPAS),Pendidikan Jasmani Olahraga dan Kesehatan (PJOK),Seni Budaya,Bahasa Inggris",
+    daftar_mata_pelajaran: "Pendidikan Pancasila,Bahasa Indonesia,Matematika,PJOK,PAI,Ilmu Pengetahuan Alam dan Sosial (IPAS),Seni Rupa,Bahasa Inggris",
     ...saved
   };
 }

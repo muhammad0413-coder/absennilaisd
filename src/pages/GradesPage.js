@@ -55,12 +55,13 @@ export async function renderGradesPage() {
             <label class="form-label">Mata Pelajaran</label>
             <select id="select-grade-subject" class="form-select">
               <option value="semua">Semua Mata Pelajaran</option>
-              <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
-              <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+              <option value="PJOK">PJOK (Pendidikan Jasmani, Olahraga &amp; Kesehatan)</option>
+              <option value="PAI">PAI (Pendidikan Agama Islam &amp; Budi Pekerti)</option>
               <option value="Matematika">Matematika</option>
-              <option value="Ilmu Pengetahuan Alam (IPA)">Ilmu Pengetahuan Alam (IPA)</option>
-              <option value="Pendidikan Jasmani & Olahraga (PJOK)">PJOK</option>
-              <option value="Seni Budaya">Seni Budaya</option>
+              <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+              <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
+              <option value="IPAS">IPAS (Ilmu Pengetahuan Alam &amp; Sosial)</option>
+              <option value="Seni Budaya">Seni Budaya / Seni Rupa</option>
               <option value="Bahasa Inggris">Bahasa Inggris</option>
             </select>
           </div>
@@ -368,11 +369,12 @@ export function attachGradesEvents() {
                 <div class="form-group">
                   <label class="form-label">Mata Pelajaran *</label>
                   <select id="modal-grade-subject" class="form-select">
-                    <option value="Pendidikan Pancasila" ${gradeToEdit && gradeToEdit.mata_pelajaran === 'Pendidikan Pancasila' ? 'selected' : ''}>Pendidikan Pancasila</option>
-                    <option value="Bahasa Indonesia" ${gradeToEdit && gradeToEdit.mata_pelajaran === 'Bahasa Indonesia' ? 'selected' : ''}>Bahasa Indonesia</option>
-                    <option value="Matematika" ${gradeToEdit && gradeToEdit.mata_pelajaran === 'Matematika' ? 'selected' : ''}>Matematika</option>
-                    <option value="Ilmu Pengetahuan Alam (IPA)" ${gradeToEdit && gradeToEdit.mata_pelajaran === 'Ilmu Pengetahuan Alam (IPA)' ? 'selected' : ''}>Ilmu Pengetahuan Alam (IPA)</option>
                     <option value="PJOK" ${gradeToEdit && gradeToEdit.mata_pelajaran === 'PJOK' ? 'selected' : ''}>PJOK</option>
+                    <option value="PAI" ${gradeToEdit && gradeToEdit.mata_pelajaran === 'PAI' ? 'selected' : ''}>PAI (Pendidikan Agama Islam)</option>
+                    <option value="Matematika" ${gradeToEdit && gradeToEdit.mata_pelajaran === 'Matematika' ? 'selected' : ''}>Matematika</option>
+                    <option value="Bahasa Indonesia" ${gradeToEdit && gradeToEdit.mata_pelajaran === 'Bahasa Indonesia' ? 'selected' : ''}>Bahasa Indonesia</option>
+                    <option value="Pendidikan Pancasila" ${gradeToEdit && gradeToEdit.mata_pelajaran === 'Pendidikan Pancasila' ? 'selected' : ''}>Pendidikan Pancasila</option>
+                    <option value="IPAS" ${gradeToEdit && gradeToEdit.mata_pelajaran === 'IPAS' ? 'selected' : ''}>IPAS</option>
                     <option value="Seni Budaya" ${gradeToEdit && gradeToEdit.mata_pelajaran === 'Seni Budaya' ? 'selected' : ''}>Seni Budaya</option>
                     <option value="Bahasa Inggris" ${gradeToEdit && gradeToEdit.mata_pelajaran === 'Bahasa Inggris' ? 'selected' : ''}>Bahasa Inggris</option>
                   </select>

@@ -17,7 +17,7 @@ export async function renderReportsPage() {
   const defaultClass = userIsGuru ? user.kelas_id : 'kelas_1';
   const settings = await getSettings();
 
-  const mapelList = (settings.daftar_mata_pelajaran || "Pendidikan Pancasila,Bahasa Indonesia,Matematika,IPAS,PJOK,Seni Budaya,Bahasa Inggris").split(',');
+  const mapelList = (settings.daftar_mata_pelajaran || "Pendidikan Pancasila,Bahasa Indonesia,Matematika,PJOK,PAI,IPAS,Seni Budaya,Bahasa Inggris").split(',');
 
   return `
     <div class="page-content">

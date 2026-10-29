@@ -28,7 +28,6 @@ export async function renderStudentPublicPage() {
     const classKey = `kelas_${num}`;
     const teacher = users.find(u => u.Kelas_Ditugaskan === classKey && (u.Role === 'guru' || !u.Role)) || {
       Nama: num === 1 ? 'Suci Ayu Ningrum, S.Pd.' : (num === 5 ? 'Dra. Ratna Suminar' : `Guru Kelas ${num}`),
-      NIP: num === 1 ? '199410142023212000' : (num === 5 ? '195701201992032001' : '-'),
       Foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces"
     };
 
@@ -49,8 +48,8 @@ export async function renderStudentPublicPage() {
         <h4 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0; line-height: 1.25;">
           ${teacher.Nama}
         </h4>
-        <p style="font-size: 0.72rem; color: #64748b; margin: 0 0 0.85rem 0;">
-          NIP. ${teacher.NIP || '-'}
+        <p style="font-size: 0.75rem; color: #16a34a; font-weight: 600; margin: 0 0 0.85rem 0;">
+          ✓ Wali Kelas Aktif
         </p>
 
         <button class="btn btn-outline btn-sm" style="width: 100%; font-size: 0.8rem; font-weight: 700; border-radius: 8px; pointer-events: none;">
@@ -146,10 +145,7 @@ export async function renderStudentPublicPage() {
                   <h3 style="font-size: 1.25rem; font-weight: 800; color: #1e3a8a; margin: 0;" id="selected-teacher-name">
                     Nama Wali Kelas
                   </h3>
-                  <p style="font-size: 0.85rem; color: #475569; margin: 2px 0 0 0;" id="selected-teacher-nip">
-                    NIP. -
-                  </p>
-                  <p style="font-size: 0.75rem; color: #64748b; margin: 2px 0 0 0;" id="selected-teacher-role">
+                  <p style="font-size: 0.78rem; color: #16a34a; font-weight: 600; margin: 2px 0 0 0;" id="selected-teacher-role">
                     Wali Kelas SDN Kesilir 02
                   </p>
                 </div>
@@ -183,13 +179,13 @@ export async function renderStudentPublicPage() {
                   </label>
                   <select id="select-student-subject" class="form-select" style="font-size: 0.85rem; font-weight: 700; padding: 0.4rem 0.6rem; border-radius: 8px;">
                     <option value="Matematika" selected>Matematika</option>
+                    <option value="PJOK">PJOK (Pendidikan Jasmani, Olahraga &amp; Kesehatan)</option>
+                    <option value="PAI">PAI (Pendidikan Agama Islam &amp; Budi Pekerti)</option>
                     <option value="Bahasa Indonesia">Bahasa Indonesia</option>
                     <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
                     <option value="IPAS">IPAS (Alam &amp; Sosial)</option>
-                    <option value="PJOK">PJOK</option>
                     <option value="Seni Rupa">Seni Rupa</option>
                     <option value="Bahasa Inggris">Bahasa Inggris</option>
-                    <option value="Pendidikan Agama">Pendidikan Agama</option>
                   </select>
                 </div>
               </div>
@@ -297,7 +293,6 @@ export function attachStudentPublicEvents() {
   // Info Wali Kelas Terpilih
   const selectedTeacherPhoto = document.getElementById('selected-teacher-photo');
   const selectedTeacherName = document.getElementById('selected-teacher-name');
-  const selectedTeacherNip = document.getElementById('selected-teacher-nip');
   const selectedTeacherRole = document.getElementById('selected-teacher-role');
 
   const containerAtt = document.getElementById('container-student-attendance-table');
@@ -344,10 +339,9 @@ export function attachStudentPublicEvents() {
     const settings = await getSettings();
     const users = await getUsers();
 
-    // Data Wali Kelas
+    // Data Wali Kelas (NIP dirahasiakan untuk perlindungan privasi guru)
     const teacherAccount = users.find(u => u.Kelas_Ditugaskan === activeClass && (u.Role === 'guru' || !u.Role));
     const teacherName = teacherAccount?.Nama || (classNum === '1' ? 'Suci Ayu Ningrum, S.Pd.' : (classNum === '5' ? 'Dra. Ratna Suminar' : `Guru Kelas ${classNum}`));
-    const teacherNip = teacherAccount?.NIP || (classNum === '1' ? '199410142023212000' : (classNum === '5' ? '195701201992032001' : '-'));
     const teacherPhoto = teacherAccount?.Foto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces";
 
     // Update kartu wali kelas terpilih
@@ -358,15 +352,14 @@ export function attachStudentPublicEvents() {
       };
     }
     if (selectedTeacherName) selectedTeacherName.textContent = teacherName;
-    if (selectedTeacherNip) selectedTeacherNip.textContent = `NIP. ${teacherNip}`;
     if (selectedTeacherRole) selectedTeacherRole.textContent = `Wali Kelas ${classNum} SDN Kesilir 02`;
 
-    // 1. Render Tabel Atas: Format Resmi Gambar 1 (Absensi 1–31 Sesuai Bulan)
-    cachedAttHtml = generateAttendanceMonthSheetHtml(students, attendance, monthText, settings, classLabel, teacherName, teacherNip, selectedYearMonth);
+    // 1. Render Tabel Atas: Format Resmi Gambar 1 (Absensi 1–31 Sesuai Bulan) - NIP dikosongkan untuk privasi
+    cachedAttHtml = generateAttendanceMonthSheetHtml(students, attendance, monthText, settings, classLabel, teacherName, "", selectedYearMonth);
     if (containerAtt) containerAtt.innerHTML = cachedAttHtml;
 
-    // 2. Render Tabel Bawah: Format Resmi Gambar 2 (Nilai Kurikulum Merdeka)
-    cachedGradesHtml = generateGradesSemesterSheetHtml(students, grades, selectedSubj, settings.semester_aktif || "1 (Ganjil)", settings, classLabel, teacherName, teacherNip, monthText);
+    // 2. Render Tabel Bawah: Format Resmi Gambar 2 (Nilai Kurikulum Merdeka) - NIP dikosongkan untuk privasi
+    cachedGradesHtml = generateGradesSemesterSheetHtml(students, grades, selectedSubj, settings.semester_aktif || "1 (Ganjil)", settings, classLabel, teacherName, "", monthText);
     if (containerGrades) containerGrades.innerHTML = cachedGradesHtml;
   };
 

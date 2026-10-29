@@ -175,7 +175,7 @@ export async function renderSettingsPage() {
 
             <div class="form-group">
               <label class="form-label">Daftar Mata Pelajaran (Pisahkan dengan koma) *</label>
-              <textarea id="set-sch-mapel" class="form-textarea" rows="3" required>${settings.daftar_mata_pelajaran || 'Pendidikan Pancasila,Bahasa Indonesia,Matematika,Ilmu Pengetahuan Alam dan Sosial (IPAS),Pendidikan Jasmani Olahraga dan Kesehatan (PJOK),Seni Rupa,Bahasa Inggris,Pendidikan Agama'}</textarea>
+              <textarea id="set-sch-mapel" class="form-textarea" rows="3" required>${settings.daftar_mata_pelajaran || 'Pendidikan Pancasila,Bahasa Indonesia,Matematika,PJOK,PAI,Ilmu Pengetahuan Alam dan Sosial (IPAS),Seni Rupa,Bahasa Inggris'}</textarea>
             </div>
 
             <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
