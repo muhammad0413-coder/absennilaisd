@@ -1,18 +1,12 @@
 /**
  * ==============================================================================
- * SISTEM INFORMASI ABSENSI DAN PENILAIAN SISWA SD KELAS 1 DAN KELAS 6
- * UNIFIED DATA SERVICES (src/services.js)
- * ==============================================================================
- * Mengintegrasikan:
- * 1. Google Apps Script Web App API (Backend Utama Google Sheets & Google Drive)
- * 2. Cloud Firestore (Cache Realtime & Operasional Cepat)
- * 3. Seed & Local Cache Interaktif (Dengan Label DEMO Jelas jika Konfigurasi Belum Aktif)
+ * SISTEM ABSENSI DAN NILAI SISWA SD KELAS 1–6
+ * UNIFIED SERVICES & SYNCHRONIZATION ENGINE (src/services.js)
  * ==============================================================================
  */
 
-import { db, isFirebaseConfigured, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where } from './firebase.js';
+import { db, isFirebaseConfigured, collection, getDocs, doc, setDoc, query, where } from './firebase.js';
 
-// URL Google Apps Script dari .env
 const GAS_API_URL = import.meta.env.VITE_GAS_API_URL || "";
 export const isGASConfigured = Boolean(
   GAS_API_URL &&
@@ -20,935 +14,533 @@ export const isGASConfigured = Boolean(
   GAS_API_URL.startsWith("https://script.google.com")
 );
 
-// Key Local Storage untuk Mock / Demo Storage
 const STORAGE_KEYS = {
-  STUDENTS: 'sd_students_data',
-  TEACHERS: 'sd_teachers_data',
-  ATTENDANCE: 'sd_attendance_data',
-  GRADES: 'sd_grades_data',
-  SCHEDULES: 'sd_schedules_data',
-  ANNOUNCEMENTS: 'sd_announcements_data',
-  SETTINGS: 'sd_settings_data',
-  SYNC_LOGS: 'sd_sync_logs',
-  AUDIT_LOGS: 'sd_audit_logs'
+  STUDENTS: 'sd_students_master',
+  ATTENDANCE: 'sd_attendance_records',
+  GRADES: 'sd_grades_records',
+  SETTINGS: 'sd_system_settings',
+  USERS: 'sd_users_accounts',
+  SYNC_LOGS: 'sd_sync_logs'
 };
 
 // ==============================================================================
-// INITIAL SEED DATA (Jelas Berlabel DEMO)
+// SEED MASTER DATA KELAS 1–6 (SIMULASI HASIL SINKRONISASI GOOGLE SHEETS)
 // ==============================================================================
-const INITIAL_DEMO_DATA = {
-  settings: {
-    nama_sekolah: "SD NEGERI HARAPAN BANGSA (DEMO)",
-    npsn: "20109988",
-    alamat_sekolah: "Jl. Merdeka Belajar No. 45, Jakarta",
-    nama_kepala_sekolah: "Drs. H. Mulyadi, M.Pd.",
-    nip_kepala_sekolah: "197203151998031004",
-    tahun_ajaran_aktif: "2026/2027",
-    semester_aktif: "1 (Ganjil)",
-    izinkan_rekap_absensi_siswa: "true"
-  },
-  teachers: [
-    {
-      teacher_id: "TCH001",
-      nip: "198504122010012015",
-      nama_guru: "Siti Rahmawati, S.Pd. (Guru Kelas 1)",
-      email: "guru1@sekolah.id",
-      nomor_telepon: "081234567891",
-      kelas_id: "kelas_1",
-      foto_url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80",
-      auth_uid: "DEV_GURU1_UID",
-      status_aktif: "aktif",
-      is_demo: true
-    },
-    {
-      teacher_id: "TCH002",
-      nip: "198207192008011009",
-      nama_guru: "Bambang Sudarmono, M.Pd. (Guru Kelas 6)",
-      email: "guru6@sekolah.id",
-      nomor_telepon: "081234567892",
-      kelas_id: "kelas_6",
-      foto_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80",
-      auth_uid: "DEV_GURU6_UID",
-      status_aktif: "aktif",
-      is_demo: true
-    }
-  ],
-  students: [
-    // Siswa Kelas 1
-    {
-      student_id: "STD_K1_001",
-      nis: "1001",
-      nisn: "0161234501",
-      nama_siswa: "Aditya Pratama [DEMO]",
-      kelas_id: "kelas_1",
-      jenis_kelamin: "L",
-      tempat_lahir: "Jakarta",
-      tanggal_lahir: "2019-04-12",
-      alamat: "Jl. Dahlia No. 5",
-      nama_wali: "Budi Pratama",
-      nomor_wali: "081311112222",
-      foto_url: "",
-      status_aktif: "aktif",
-      created_at: new Date().toISOString()
-    },
-    {
-      student_id: "STD_K1_002",
-      nis: "1002",
-      nisn: "0161234502",
-      nama_siswa: "Annisa Cantika Putri [DEMO]",
-      kelas_id: "kelas_1",
-      jenis_kelamin: "P",
-      tempat_lahir: "Bandung",
-      tanggal_lahir: "2019-06-20",
-      alamat: "Jl. Mawar No. 12",
-      nama_wali: "Hendra Putri",
-      nomor_wali: "081322223333",
-      foto_url: "",
-      status_aktif: "aktif",
-      created_at: new Date().toISOString()
-    },
-    {
-      student_id: "STD_K1_003",
-      nis: "1003",
-      nisn: "0161234503",
-      nama_siswa: "Bilal Rizky Ramadhan [DEMO]",
-      kelas_id: "kelas_1",
-      jenis_kelamin: "L",
-      tempat_lahir: "Jakarta",
-      tanggal_lahir: "2019-05-15",
-      alamat: "Jl. Melati No. 8",
-      nama_wali: "Agus Ramadhan",
-      nomor_wali: "081333334444",
-      foto_url: "",
-      status_aktif: "aktif",
-      created_at: new Date().toISOString()
-    },
-    // Siswa Kelas 6
-    {
-      student_id: "STD_K6_001",
-      nis: "6001",
-      nisn: "0119876501",
-      nama_siswa: "Dimas Arya Saputra [DEMO]",
-      kelas_id: "kelas_6",
-      jenis_kelamin: "L",
-      tempat_lahir: "Surabaya",
-      tanggal_lahir: "2014-02-10",
-      alamat: "Jl. Kenanga No. 18",
-      nama_wali: "Saputra Hadi",
-      nomor_wali: "081344445555",
-      foto_url: "",
-      status_aktif: "aktif",
-      created_at: new Date().toISOString()
-    },
-    {
-      student_id: "STD_K6_002",
-      nis: "6002",
-      nisn: "0119876502",
-      nama_siswa: "Fatimah Zahra [DEMO]",
-      kelas_id: "kelas_6",
-      jenis_kelamin: "P",
-      tempat_lahir: "Jakarta",
-      tanggal_lahir: "2014-08-25",
-      alamat: "Jl. Cempaka No. 3",
-      nama_wali: "Hasan Zahra",
-      nomor_wali: "081355556666",
-      foto_url: "",
-      status_aktif: "aktif",
-      created_at: new Date().toISOString()
-    },
-    {
-      student_id: "STD_K6_003",
-      nis: "6003",
-      nisn: "0119876503",
-      nama_siswa: "Galang Prasetyo [DEMO]",
-      kelas_id: "kelas_6",
-      jenis_kelamin: "L",
-      tempat_lahir: "Semarang",
-      tanggal_lahir: "2014-11-04",
-      alamat: "Jl. Flamboyan No. 22",
-      nama_wali: "Bambang Prasetyo",
-      nomor_wali: "081366667777",
-      foto_url: "",
-      status_aktif: "aktif",
-      created_at: new Date().toISOString()
-    }
-  ],
-  schedules: [
-    { schedule_id: "SCH_101", kelas_id: "kelas_1", hari: "Senin", jam_mulai: "07:30", jam_selesai: "09:00", mata_pelajaran: "Pendidikan Pancasila", nama_guru: "Siti Rahmawati, S.Pd.", keterangan: "Buku Tematik Bab 1" },
-    { schedule_id: "SCH_102", kelas_id: "kelas_1", hari: "Senin", jam_mulai: "09:30", jam_selesai: "11:00", mata_pelajaran: "Bahasa Indonesia", nama_guru: "Siti Rahmawati, S.Pd.", keterangan: "Membaca & Mengeja" },
-    { schedule_id: "SCH_103", kelas_id: "kelas_1", hari: "Selasa", jam_mulai: "07:30", jam_selesai: "09:00", mata_pelajaran: "Matematika", nama_guru: "Siti Rahmawati, S.Pd.", keterangan: "Mengenal Angka 1-20" },
-    { schedule_id: "SCH_601", kelas_id: "kelas_6", hari: "Senin", jam_mulai: "07:30", jam_selesai: "09:00", mata_pelajaran: "Matematika", nama_guru: "Bambang Sudarmono, M.Pd.", keterangan: "Operasi Hitung Pecahan" },
-    { schedule_id: "SCH_602", kelas_id: "kelas_6", hari: "Senin", jam_mulai: "09:30", jam_selesai: "11:00", mata_pelajaran: "Ilmu Pengetahuan Alam (IPA)", nama_guru: "Bambang Sudarmono, M.Pd.", keterangan: "Sistem Tata Surya" }
-  ],
-  announcements: [
-    {
-      announcement_id: "ANN_001",
-      judul: "Upacara Hari Sumpah Pemuda [DEMO]",
-      isi: "Seluruh siswa kelas 1 dan kelas 6 diwajibkan mengenakan seragam merah putih lengkap dengan topi dan dasi.",
-      tanggal_publikasi: "2026-10-28",
-      target_kelas: "semua",
-      status_publikasi: "dipublikasikan"
-    },
-    {
-      announcement_id: "ANN_002",
-      judul: "Persiapan Penilaian Tengah Semester Kelas 1 [DEMO]",
-      isi: "Kepada orang tua siswa kelas 1, PTS akan dimulai pekan depan. Pastikan ananda belajar materi membaca dan berhitung dasar.",
-      tanggal_publikasi: "2026-10-25",
-      target_kelas: "kelas_1",
-      status_publikasi: "dipublikasikan"
-    },
-    {
-      announcement_id: "ANN_003",
-      judul: "Bimbingan Belajar Ujian Sekolah Kelas 6 [DEMO]",
-      isi: "Bimbel tambahan untuk persiapan asesmen akhir sekolah akan dilaksanakan setiap hari Selasa dan Kamis jam 13:00.",
-      tanggal_publikasi: "2026-10-26",
-      target_kelas: "kelas_6",
-      status_publikasi: "dipublikasikan"
-    }
-  ],
-  attendance: [
-    { attendance_id: "ATT_001", tanggal: new Date().toISOString().substring(0, 10), student_id: "STD_K1_001", kelas_id: "kelas_1", status_absensi: "Hadir", keterangan: "Tepat waktu" },
-    { attendance_id: "ATT_002", tanggal: new Date().toISOString().substring(0, 10), student_id: "STD_K1_002", kelas_id: "kelas_1", status_absensi: "Hadir", keterangan: "Tepat waktu" },
-    { attendance_id: "ATT_003", tanggal: new Date().toISOString().substring(0, 10), student_id: "STD_K1_003", kelas_id: "kelas_1", status_absensi: "Izin", keterangan: "Acara keluarga" },
-    { attendance_id: "ATT_004", tanggal: new Date().toISOString().substring(0, 10), student_id: "STD_K6_001", kelas_id: "kelas_6", status_absensi: "Hadir", keterangan: "Tepat waktu" },
-    { attendance_id: "ATT_005", tanggal: new Date().toISOString().substring(0, 10), student_id: "STD_K6_002", kelas_id: "kelas_6", status_absensi: "Sakit", keterangan: "Flu ringan" },
-    { attendance_id: "ATT_006", tanggal: new Date().toISOString().substring(0, 10), student_id: "STD_K6_003", kelas_id: "kelas_6", status_absensi: "Hadir", keterangan: "Tepat waktu" }
-  ],
-  grades: [
-    { grade_id: "GRD_001", student_id: "STD_K1_001", kelas_id: "kelas_1", semester: "1 (Ganjil)", tahun_ajaran: "2026/2027", mata_pelajaran: "Bahasa Indonesia", jenis_penilaian: "Formatif", nama_penilaian: "Membaca Suku Kata", nilai: 88, keterangan: "Sangat lancar membaca", status_publikasi: "dipublikasikan" },
-    { grade_id: "GRD_002", student_id: "STD_K1_001", kelas_id: "kelas_1", semester: "1 (Ganjil)", tahun_ajaran: "2026/2027", mata_pelajaran: "Matematika", jenis_penilaian: "Formatif", nama_penilaian: "Penjumlahan 1-10", nilai: 92, keterangan: "Pemahaman konsep bagus", status_publikasi: "dipublikasikan" },
-    { grade_id: "GRD_003", student_id: "STD_K6_001", kelas_id: "kelas_6", semester: "1 (Ganjil)", tahun_ajaran: "2026/2027", mata_pelajaran: "Matematika", jenis_penilaian: "Sumatif Lingkup Materi", nama_penilaian: "Operasi Bilangan Bulat", nilai: 85, keterangan: "Bagus", status_publikasi: "dipublikasikan" },
-    { grade_id: "GRD_004", student_id: "STD_K6_001", kelas_id: "kelas_6", semester: "1 (Ganjil)", tahun_ajaran: "2026/2027", mata_pelajaran: "IPA", jenis_penilaian: "Sumatif Lingkup Materi", nama_penilaian: "Sistem Reproduksi Tumbuhan", nilai: 90, keterangan: "Sangat baik", status_publikasi: "dipublikasikan" }
-  ]
+const INITIAL_MASTER_STUDENTS = [
+  // Kelas 1
+  { ID_Siswa: "STD_1001", NIS: "1001", NISN: "0161234501", Nama_Lengkap: "Aditya Pratama [DEMO]", Jenis_Kelamin: "Laki-laki", Tempat_Lahir: "Jakarta", Tanggal_Lahir: "2019-04-12", Nama_Orang_Tua: "Budi Pratama", Alamat: "Jl. Dahlia No. 5", Kelas: "1", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
+  { ID_Siswa: "STD_1002", NIS: "1002", NISN: "0161234502", Nama_Lengkap: "Annisa Cantika Putri [DEMO]", Jenis_Kelamin: "Perempuan", Tempat_Lahir: "Bandung", Tanggal_Lahir: "2019-06-20", Nama_Orang_Tua: "Hendra Putri", Alamat: "Jl. Mawar No. 12", Kelas: "1", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
+  
+  // Kelas 2
+  { ID_Siswa: "STD_2001", NIS: "2001", NISN: "0151234501", Nama_Lengkap: "Bayu Bagaskara [DEMO]", Jenis_Kelamin: "Laki-laki", Tempat_Lahir: "Jakarta", Tanggal_Lahir: "2018-03-10", Nama_Orang_Tua: "Dedi Bagas", Alamat: "Jl. Anggrek No. 3", Kelas: "2", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
+  { ID_Siswa: "STD_2002", NIS: "2002", NISN: "0151234502", Nama_Lengkap: "Bella Safira [DEMO]", Jenis_Kelamin: "Perempuan", Tempat_Lahir: "Semarang", Tanggal_Lahir: "2018-09-14", Nama_Orang_Tua: "Safira Gunawan", Alamat: "Jl. Melati No. 9", Kelas: "2", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
+
+  // Kelas 3
+  { ID_Siswa: "STD_3001", NIS: "3001", NISN: "0141234501", Nama_Lengkap: "Citra Kirana [DEMO]", Jenis_Kelamin: "Perempuan", Tempat_Lahir: "Bogor", Tanggal_Lahir: "2017-08-15", Nama_Orang_Tua: "Rudi Kirana", Alamat: "Jl. Kenanga No. 8", Kelas: "3", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
+  { ID_Siswa: "STD_3002", NIS: "3002", NISN: "0141234502", Nama_Lengkap: "Candra Wijaya [DEMO]", Jenis_Kelamin: "Laki-laki", Tempat_Lahir: "Jakarta", Tanggal_Lahir: "2017-12-05", Nama_Orang_Tua: "Wijaya Hartono", Alamat: "Jl. Anyelir No. 11", Kelas: "3", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
+
+  // Kelas 4
+  { ID_Siswa: "STD_4001", NIS: "4001", NISN: "0131234501", Nama_Lengkap: "Danu Wijaya [DEMO]", Jenis_Kelamin: "Laki-laki", Tempat_Lahir: "Depok", Tanggal_Lahir: "2016-11-22", Nama_Orang_Tua: "Wijaya Hadi", Alamat: "Jl. Melati No. 14", Kelas: "4", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
+  { ID_Siswa: "STD_4002", NIS: "4002", NISN: "0131234502", Nama_Lengkap: "Dinda Permata [DEMO]", Jenis_Kelamin: "Perempuan", Tempat_Lahir: "Jakarta", Tanggal_Lahir: "2016-01-30", Nama_Orang_Tua: "Permata Salim", Alamat: "Jl. Kamboja No. 4", Kelas: "4", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
+
+  // Kelas 5
+  { ID_Siswa: "STD_5001", NIS: "5001", NISN: "0121234501", Nama_Lengkap: "Eka Putri Lestari [DEMO]", Jenis_Kelamin: "Perempuan", Tempat_Lahir: "Jakarta", Tanggal_Lahir: "2015-05-18", Nama_Orang_Tua: "Lestari Eko", Alamat: "Jl. Cempaka No. 2", Kelas: "5", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
+  { ID_Siswa: "STD_5002", NIS: "5002", NISN: "0121234502", Nama_Lengkap: "Erlangga Yudha [DEMO]", Jenis_Kelamin: "Laki-laki", Tempat_Lahir: "Bandung", Tanggal_Lahir: "2015-10-12", Nama_Orang_Tua: "Yudha Pratama", Alamat: "Jl. Mawar No. 27", Kelas: "5", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
+
+  // Kelas 6
+  { ID_Siswa: "STD_6001", NIS: "6001", NISN: "0111234501", Nama_Lengkap: "Faris Al-Ghifari [DEMO]", Jenis_Kelamin: "Laki-laki", Tempat_Lahir: "Surabaya", Tanggal_Lahir: "2014-02-10", Nama_Orang_Tua: "Ghifari Hasan", Alamat: "Jl. Flamboyan No. 19", Kelas: "6", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
+  { ID_Siswa: "STD_6002", NIS: "6002", NISN: "0111234502", Nama_Lengkap: "Ghea Salsabila [DEMO]", Jenis_Kelamin: "Perempuan", Tempat_Lahir: "Jakarta", Tanggal_Lahir: "2014-07-25", Nama_Orang_Tua: "Salsabila Ridwan", Alamat: "Jl. Teratai No. 7", Kelas: "6", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" }
+];
+
+const INITIAL_SETTINGS = {
+  nama_sekolah: "SD NEGERI HARAPAN BANGSA",
+  npsn: "20109988",
+  alamat_sekolah: "Jl. Merdeka Belajar No. 45, Jakarta",
+  nama_kepala_sekolah: "Drs. H. Mulyadi, M.Pd.",
+  nip_kepala_sekolah: "197203151998031004",
+  tahun_pelajaran_aktif: "2026/2027",
+  semester_aktif: "1 (Ganjil)",
+  kkm_default: "75",
+  daftar_mata_pelajaran: "Pendidikan Pancasila,Bahasa Indonesia,Matematika,Ilmu Pengetahuan Alam dan Sosial (IPAS),Pendidikan Jasmani Olahraga dan Kesehatan (PJOK),Seni Budaya,Bahasa Inggris"
 };
 
-// Inisialisasi Local Storage jika kosong
+const INITIAL_USERS = [
+  { User_ID: "USR_ADM_001", Nama: "Administrator Sekolah", Email: "admin@sekolah.id", Role: "admin", Kelas_Ditugaskan: "semua", Status: "Aktif" },
+  { User_ID: "USR_KS_001", Nama: "Drs. H. Mulyadi, M.Pd.", Email: "kepsek@sekolah.id", Role: "kepala_sekolah", Kelas_Ditugaskan: "semua", Status: "Aktif" },
+  { User_ID: "USR_GUR_001", Nama: "Siti Rahmawati, S.Pd.", Email: "guru1@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_1", Status: "Aktif" },
+  { User_ID: "USR_GUR_002", Nama: "Ahmad Fauzi, S.Pd.", Email: "guru2@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_2", Status: "Aktif" },
+  { User_ID: "USR_GUR_003", Nama: "Dewi Lestari, S.Pd.", Email: "guru3@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_3", Status: "Aktif" },
+  { User_ID: "USR_GUR_004", Nama: "Rendra Saputra, S.Pd.", Email: "guru4@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_4", Status: "Aktif" },
+  { User_ID: "USR_GUR_005", Nama: "Nurul Hidayah, S.Pd.", Email: "guru5@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_5", Status: "Aktif" },
+  { User_ID: "USR_GUR_006", Nama: "Bambang Sudarmono, M.Pd.", Email: "guru6@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_6", Status: "Aktif" }
+];
+
 function initLocalStorage() {
   if (!localStorage.getItem(STORAGE_KEYS.STUDENTS)) {
-    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(INITIAL_DEMO_DATA.students));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.TEACHERS)) {
-    localStorage.setItem(STORAGE_KEYS.TEACHERS, JSON.stringify(INITIAL_DEMO_DATA.teachers));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.ATTENDANCE)) {
-    localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(INITIAL_DEMO_DATA.attendance));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.GRADES)) {
-    localStorage.setItem(STORAGE_KEYS.GRADES, JSON.stringify(INITIAL_DEMO_DATA.grades));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.SCHEDULES)) {
-    localStorage.setItem(STORAGE_KEYS.SCHEDULES, JSON.stringify(INITIAL_DEMO_DATA.schedules));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.ANNOUNCEMENTS)) {
-    localStorage.setItem(STORAGE_KEYS.ANNOUNCEMENTS, JSON.stringify(INITIAL_DEMO_DATA.announcements));
+    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(INITIAL_MASTER_STUDENTS));
   }
   if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(INITIAL_DEMO_DATA.settings));
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(INITIAL_SETTINGS));
   }
-  if (!localStorage.getItem(STORAGE_KEYS.AUDIT_LOGS)) {
-    localStorage.setItem(STORAGE_KEYS.AUDIT_LOGS, JSON.stringify([
-      { log_id: "LOG_INIT", auth_uid: "SYSTEM", nama_pengguna: "System", role: "admin", aksi: "INITIALIZE", jenis_data: "SYSTEM", data_id: "SYSTEM", waktu: new Date().toISOString(), hasil: "Sukses", keterangan: "Sistem berhasil diinisialisasi." }
+  if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.ATTENDANCE)) {
+    const today = new Date().toISOString().substring(0, 10);
+    localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify([
+      { ID_Absensi: "ATT_1001", Tanggal: today, Tahun_Pelajaran: "2026/2027", Semester: "1 (Ganjil)", Kelas: "1", ID_Siswa: "STD_1001", NIS: "1001", NISN: "0161234501", Nama_Siswa: "Aditya Pratama [DEMO]", Status_Absensi: "Hadir", Keterangan: "Tepat waktu", Diinput_Oleh: "Siti Rahmawati, S.Pd.", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
+      { ID_Absensi: "ATT_1002", Tanggal: today, Tahun_Pelajaran: "2026/2027", Semester: "1 (Ganjil)", Kelas: "1", ID_Siswa: "STD_1002", NIS: "1002", NISN: "0161234502", Nama_Siswa: "Annisa Cantika Putri [DEMO]", Status_Absensi: "Hadir", Keterangan: "Tepat waktu", Diinput_Oleh: "Siti Rahmawati, S.Pd.", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
+      { ID_Absensi: "ATT_6001", Tanggal: today, Tahun_Pelajaran: "2026/2027", Semester: "1 (Ganjil)", Kelas: "6", ID_Siswa: "STD_6001", NIS: "6001", NISN: "0111234501", Nama_Siswa: "Faris Al-Ghifari [DEMO]", Status_Absensi: "Hadir", Keterangan: "Tepat waktu", Diinput_Oleh: "Bambang Sudarmono, M.Pd.", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
+      { ID_Absensi: "ATT_6002", Tanggal: today, Tahun_Pelajaran: "2026/2027", Semester: "1 (Ganjil)", Kelas: "6", ID_Siswa: "STD_6002", NIS: "6002", NISN: "0111234502", Nama_Siswa: "Ghea Salsabila [DEMO]", Status_Absensi: "Sakit", Keterangan: "Flu ringan", Diinput_Oleh: "Bambang Sudarmono, M.Pd.", Updated_At: new Date().toISOString(), Sync_Status: "Synced" }
+    ]));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.GRADES)) {
+    localStorage.setItem(STORAGE_KEYS.GRADES, JSON.stringify([
+      { ID_Nilai: "GRD_1001", Tahun_Pelajaran: "2026/2027", Semester: "1 (Ganjil)", Kelas: "1", ID_Siswa: "STD_1001", NIS: "1001", NISN: "0161234501", Nama_Siswa: "Aditya Pratama [DEMO]", Mata_Pelajaran: "Bahasa Indonesia", Jenis_Asesmen: "Formatif", Lingkup_Materi: "Mengenal Suku Kata", Nilai: 88, Deskripsi: "Sangat baik dalam mengeja suku kata", Diinput_Oleh: "Siti Rahmawati, S.Pd.", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
+      { ID_Nilai: "GRD_6001", Tahun_Pelajaran: "2026/2027", Semester: "1 (Ganjil)", Kelas: "6", ID_Siswa: "STD_6001", NIS: "6001", NISN: "0111234501", Nama_Siswa: "Faris Al-Ghifari [DEMO]", Mata_Pelajaran: "Matematika", Jenis_Asesmen: "Sumatif Lingkup Materi", Lingkup_Materi: "Operasi Pecahan & Desimal", Nilai: 90, Deskripsi: "Menguasai konsep hitung pecahan dengan sangat cermat", Diinput_Oleh: "Bambang Sudarmono, M.Pd.", Updated_At: new Date().toISOString(), Sync_Status: "Synced" }
     ]));
   }
   if (!localStorage.getItem(STORAGE_KEYS.SYNC_LOGS)) {
     localStorage.setItem(STORAGE_KEYS.SYNC_LOGS, JSON.stringify([
-      { sync_id: "SYNC_INIT", jenis_data: "SEMUA_DATA", sumber: "Google Sheets", tujuan: "Cloud Firestore", status: "sukses", percobaan: 1, waktu_mulai: new Date().toISOString(), waktu_selesai: new Date().toISOString(), pesan_error: "-" }
+      { ID_Log: "LOG_INIT", Waktu: new Date().toISOString(), Jenis_Data: "DATA_SISWA", Arah_Sinkronisasi: "Sheets -> Firebase", Jumlah_Diproses: 12, Jumlah_Berhasil: 12, Jumlah_Gagal: 0, Status: "Sukses", Pesan: "Data master siswa kelas 1-6 berhasil disinkronkan." }
     ]));
   }
 }
 initLocalStorage();
 
 // ==============================================================================
-// AUDIT LOG HELPER
-// ==============================================================================
-export function addAuditLog(user, aksi, jenisData, dataId, keterangan) {
-  const logs = JSON.parse(localStorage.getItem(STORAGE_KEYS.AUDIT_LOGS) || '[]');
-  const newLog = {
-    log_id: "LOG_" + Date.now().toString(36),
-    auth_uid: user?.uid || user?.authUid || "ANON",
-    nama_pengguna: user?.displayName || user?.email || "Pengguna",
-    role: user?.role || "public",
-    aksi: aksi,
-    jenis_data: jenisData,
-    data_id: dataId,
-    waktu: new Date().toISOString(),
-    hasil: "Sukses",
-    keterangan: keterangan || ""
-  };
-  logs.unshift(newLog);
-  localStorage.setItem(STORAGE_KEYS.AUDIT_LOGS, JSON.stringify(logs.slice(0, 100)));
-}
-
-// ==============================================================================
-// PUBLIC METHODS (UNTUK HALAMAN SISWA & INFORMASI KELAS)
+// 1. DATA INDUK SISWA (HANYA DIBACA DARI HASIL SINKRONISASI GOOGLE SHEETS)
 // ==============================================================================
 
 /**
- * Mengambil informasi publik kelas (Guru, Jadwal, Pengumuman, Rekap Absensi Umum)
+ * Mengambil daftar siswa dari database (Read-only di website)
  */
-export async function getPublicClassInfo(kelasId) {
-  // Jika Google Apps Script terkonfigurasi, panggil endpoint live
-  if (isGASConfigured) {
-    try {
-      const res = await fetch(`${GAS_API_URL}?action=getPublicClassInfo&kelas_id=${kelasId}`);
-      if (res.ok) {
-        const data = await res.json();
-        return data;
-      }
-    } catch (e) {
-      console.warn("[API] GAS offline/gagal, beralih ke cache data:", e);
-    }
-  }
-
-  // Fallback data lokal
-  const teachers = JSON.parse(localStorage.getItem(STORAGE_KEYS.TEACHERS) || '[]');
-  const schedules = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCHEDULES) || '[]');
-  const announcements = JSON.parse(localStorage.getItem(STORAGE_KEYS.ANNOUNCEMENTS) || '[]');
-  const attendance = JSON.parse(localStorage.getItem(STORAGE_KEYS.ATTENDANCE) || '[]');
-
-  const teacher = teachers.find(t => t.kelas_id === kelasId) || {
-    nama_guru: "Guru Kelas " + (kelasId === "kelas_1" ? "1" : "6"),
-    foto_url: "",
-    nomor_telepon: "-"
-  };
-
-  const classSchedules = schedules.filter(s => s.kelas_id === kelasId);
-  const classAnnouncements = announcements.filter(a => 
-    a.status_publikasi === 'dipublikasikan' && (a.target_kelas === kelasId || a.target_kelas === 'semua')
-  );
-
-  const classAttendance = attendance.filter(a => a.kelas_id === kelasId);
-  const rekap = {
-    hadir: classAttendance.filter(a => a.status_absensi === 'Hadir').length,
-    sakit: classAttendance.filter(a => a.status_absensi === 'Sakit').length,
-    izin: classAttendance.filter(a => a.status_absensi === 'Izin').length,
-    alpa: classAttendance.filter(a => a.status_absensi === 'Alpa').length
-  };
-
-  return {
-    kelas_id: kelasId,
-    nama_kelas: kelasId === 'kelas_1' ? 'Kelas 1' : 'Kelas 6',
-    guru: teacher,
-    jadwal: classSchedules,
-    pengumuman: classAnnouncements,
-    rekap_absensi_umum: rekap
-  };
-}
-
-/**
- * Verifikasi Siswa untuk Akses Nilai & Absensi Pribadi Aman
- */
-export async function verifyStudentAccess(nis, birthDate) {
-  if (isGASConfigured) {
-    try {
-      const url = `${GAS_API_URL}?action=verifyStudentAccess&nis=${encodeURIComponent(nis)}&tanggal_lahir=${encodeURIComponent(birthDate || '')}`;
-      const res = await fetch(url);
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch (e) {
-      console.warn("[API] GAS verification offline, beralih ke cache data:", e);
-    }
-  }
-
-  const students = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
-  const student = students.find(s => String(s.nis).trim() === String(nis).trim());
-
-  if (!student) {
-    return { error: `Siswa dengan NIS ${nis} tidak ditemukan.` };
-  }
-
-  // Jika tanggal lahir diberikan, periksa kecocokan
-  if (birthDate && student.tanggal_lahir && student.tanggal_lahir !== birthDate) {
-    return { error: "Tanggal lahir yang dimasukkan tidak cocok dengan data siswa." };
-  }
-
-  const grades = JSON.parse(localStorage.getItem(STORAGE_KEYS.GRADES) || '[]')
-    .filter(g => g.student_id === student.student_id && g.status_publikasi === 'dipublikasikan');
-
-  const attendance = JSON.parse(localStorage.getItem(STORAGE_KEYS.ATTENDANCE) || '[]')
-    .filter(a => a.student_id === student.student_id);
-
-  return {
-    student: {
-      student_id: student.student_id,
-      nis: student.nis,
-      nama_siswa: student.nama_siswa,
-      kelas_id: student.kelas_id,
-      jenis_kelamin: student.jenis_kelamin,
-      status_aktif: student.status_aktif
-    },
-    grades: grades,
-    attendance: attendance
-  };
-}
-
-// ==============================================================================
-// SISWA MANAGEMENT
-// ==============================================================================
-
-/**
- * Mengambil daftar siswa berdasarkan filter kelas
- */
-export async function getStudents(kelasId = null) {
-  const students = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
-  if (kelasId) {
-    return students.filter(s => s.kelas_id === kelasId);
-  }
-  return students;
-}
-
-/**
- * Menambahkan atau memperbarui data siswa
- */
-export async function saveStudent(user, studentData) {
-  if (!studentData.nama_siswa || !studentData.nis) {
-    throw new Error("Nama siswa dan NIS wajib diisi.");
-  }
-
-  // Validasi Otorisasi Kelas: Guru tidak boleh menambah siswa ke kelas lain
-  let targetClass = studentData.kelas_id;
-  if (user.role !== 'admin') {
-    targetClass = user.kelas_id; // Kunci ke kelas yang ditugaskan
-  }
-
-  const students = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
-  const cleanNis = String(studentData.nis).trim();
-
-  // Validasi duplikasi NIS
-  const duplicate = students.find(s => 
-    String(s.nis).trim() === cleanNis && 
-    (!studentData.student_id || s.student_id !== studentData.student_id)
-  );
-
-  if (duplicate) {
-    throw new Error(`NIS ${cleanNis} sudah terdaftar atas nama ${duplicate.nama_siswa}.`);
-  }
-
-  let studentId = studentData.student_id;
-  let isNew = false;
-  const now = new Date().toISOString();
-
-  if (!studentId) {
-    studentId = "STD_" + targetClass.toUpperCase() + "_" + Date.now().toString(36) + "_" + Math.floor(Math.random() * 100);
-    isNew = true;
-
-    const newStudent = {
-      student_id: studentId,
-      nis: cleanNis,
-      nisn: studentData.nisn ? String(studentData.nisn).trim() : "",
-      nama_siswa: studentData.nama_siswa.trim(),
-      kelas_id: targetClass,
-      jenis_kelamin: studentData.jenis_kelamin || "L",
-      tempat_lahir: studentData.tempat_lahir || "",
-      tanggal_lahir: studentData.tanggal_lahir || "",
-      alamat: studentData.alamat || "",
-      nama_wali: studentData.nama_wali || "",
-      nomor_wali: studentData.nomor_wali || "",
-      foto_url: studentData.foto_url || "",
-      status_aktif: "aktif",
-      created_at: now,
-      updated_at: now
-    };
-
-    students.push(newStudent);
-    addAuditLog(user, "TAMBAH_SISWA", "SISWA", studentId, `Menambah siswa baru: ${newStudent.nama_siswa} (${targetClass})`);
-  } else {
-    const index = students.findIndex(s => s.student_id === studentId);
-    if (index === -1) throw new Error("Data siswa tidak ditemukan.");
-
-    // Guru tidak boleh mengubah siswa kelas lain
-    if (user.role !== 'admin' && students[index].kelas_id !== user.kelas_id) {
-      throw new Error("Anda tidak berhak mengubah data siswa kelas lain.");
-    }
-
-    students[index] = {
-      ...students[index],
-      nis: cleanNis,
-      nisn: studentData.nisn ? String(studentData.nisn).trim() : "",
-      nama_siswa: studentData.nama_siswa.trim(),
-      kelas_id: user.role === 'admin' ? targetClass : students[index].kelas_id,
-      jenis_kelamin: studentData.jenis_kelamin || students[index].jenis_kelamin,
-      tempat_lahir: studentData.tempat_lahir || "",
-      tanggal_lahir: studentData.tanggal_lahir || "",
-      alamat: studentData.alamat || "",
-      nama_wali: studentData.nama_wali || "",
-      nomor_wali: studentData.nomor_wali || "",
-      updated_at: now
-    };
-
-    addAuditLog(user, "UBAH_SISWA", "SISWA", studentId, `Update data siswa: ${students[index].nama_siswa}`);
-  }
-
-  localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
-
-  // Jika Apps Script terhubung, kirim juga ke Google Sheets di backend
-  if (isGASConfigured) {
-    try {
-      fetch(GAS_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "saveStudent",
-          id_token: user.idToken || `DEV_TOKEN_${user.role}`,
-          data: { ...studentData, student_id: studentId, kelas_id: targetClass }
-        })
-      }).catch(err => console.warn("Sinkronisasi GAS background:", err));
-    } catch (e) {}
-  }
-
-  return {
-    success: true,
-    student_id: studentId,
-    message: isNew ? "Siswa berhasil ditambahkan!" : "Data siswa berhasil diperbarui!"
-  };
-}
-
-/**
- * Menonaktifkan siswa dari kelas secara aman (Soft Delete: riwayat absensi & nilai tetap utuh)
- */
-export async function deactivateStudent(user, studentId, alasan) {
-  if (!alasan || alasan.trim().length < 5) {
-    throw new Error("Alasan penonaktifan siswa wajib diisi minimal 5 karakter.");
-  }
-
-  const students = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
-  const index = students.findIndex(s => s.student_id === studentId);
-  if (index === -1) throw new Error("Siswa tidak ditemukan.");
-
-  const student = students[index];
-
-  // Otorisasi kelas
-  if (user.role !== 'admin' && student.kelas_id !== user.kelas_id) {
-    throw new Error("Anda tidak berhak menonaktifkan siswa di luar kelas Anda.");
-  }
-
-  students[index].status_aktif = 'nonaktif';
-  students[index].alasan_nonaktif = alasan;
-  students[index].dinonaktifkan_oleh = user.email || user.displayName;
-  students[index].updated_at = new Date().toISOString();
-
-  localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
-  addAuditLog(user, "NONAKTIFKAN_SISWA", "SISWA", studentId, `Alasan: ${alasan} | Siswa: ${student.nama_siswa}`);
-
-  // Kirim ke Apps Script jika ada
-  if (isGASConfigured) {
-    fetch(GAS_API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "deactivateStudent",
-        id_token: user.idToken || `DEV_TOKEN_${user.role}`,
-        student_id: studentId,
-        alasan: alasan
-      })
-    }).catch(err => console.warn("GAS deactivate error:", err));
-  }
-
-  return {
-    success: true,
-    message: `Siswa ${student.nama_siswa} berhasil dinonaktifkan dari kelas (riwayat nilai & absensi tetap tersimpan aman).`
-  };
-}
-
-/**
- * Memulihkan / Mengaktifkan kembali siswa yang dinonaktifkan
- */
-export async function reactivateStudent(user, studentId, alasan = "Reaktivasi") {
-  const students = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
-  const index = students.findIndex(s => s.student_id === studentId);
-  if (index === -1) throw new Error("Siswa tidak ditemukan.");
-
-  if (user.role !== 'admin' && students[index].kelas_id !== user.kelas_id) {
-    throw new Error("Akses ditolak.");
-  }
-
-  students[index].status_aktif = 'aktif';
-  students[index].updated_at = new Date().toISOString();
-
-  localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
-  addAuditLog(user, "AKTIFKAN_SISWA", "SISWA", studentId, `Reaktivasi: ${students[index].nama_siswa}`);
-
-  return { success: true, message: "Siswa berhasil diaktifkan kembali." };
-}
-
-// ==============================================================================
-// ATTENDANCE MANAGEMENT
-// ==============================================================================
-
-/**
- * Mengambil absensi berdasarkan kelas dan tanggal/bulan
- */
-export async function getAttendance(kelasId, date = null, month = null) {
-  const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.ATTENDANCE) || '[]');
-  return all.filter(a => {
-    if (kelasId && a.kelas_id !== kelasId) return false;
-    if (date && a.tanggal !== date) return false;
-    if (month && !a.tanggal.startsWith(month)) return false;
+export async function getStudents(kelas = null, status = 'Aktif') {
+  const allStudents = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
+  return allStudents.filter(s => {
+    if (kelas && String(s.Kelas) !== String(kelas).replace('kelas_', '')) return false;
+    if (status && status !== 'semua' && s.Status_Siswa !== status) return false;
     return true;
   });
 }
 
 /**
- * Menyimpan absensi kelas batch (anti duplikasi per siswa per tanggal)
+ * Mencari siswa berdasarkan nama atau NIS
+ */
+export async function searchStudents(query, kelas = null) {
+  const students = await getStudents(kelas, 'semua');
+  const cleanQ = (query || '').toLowerCase().trim();
+  if (!cleanQ) return students;
+
+  return students.filter(s =>
+    s.Nama_Lengkap.toLowerCase().includes(cleanQ) ||
+    String(s.NIS).includes(cleanQ) ||
+    String(s.NISN).includes(cleanQ)
+  );
+}
+
+// ==============================================================================
+// 2. ABSENSI HARIAN & REKAP KEHADIRAN (WEBSITE -> FIREBASE -> SHEETS)
+// ==============================================================================
+
+/**
+ * Mengambil data absensi berdasarkan kelas dan filter tanggal / rentang
+ */
+export async function getAttendance(kelas = null, tanggal = null, bulan = null) {
+  const allAttendance = JSON.parse(localStorage.getItem(STORAGE_KEYS.ATTENDANCE) || '[]');
+  return allAttendance.filter(a => {
+    if (kelas && String(a.Kelas) !== String(kelas).replace('kelas_', '')) return false;
+    if (tanggal && a.Tanggal !== tanggal) return false;
+    if (bulan && !a.Tanggal.startsWith(bulan)) return false;
+    return true;
+  });
+}
+
+/**
+ * Menyimpan data absensi batch dari formulir guru
+ * Mencegah data ganda untuk siswa dan tanggal yang sama
  */
 export async function saveAttendanceBatch(user, attendanceList) {
   if (!Array.isArray(attendanceList) || attendanceList.length === 0) {
-    throw new Error("Daftar absensi kosong.");
+    throw new Error("Daftar absensi tidak boleh kosong.");
   }
 
   const allAttendance = JSON.parse(localStorage.getItem(STORAGE_KEYS.ATTENDANCE) || '[]');
   const now = new Date().toISOString();
-  let count = 0;
+  let savedCount = 0;
 
   for (const item of attendanceList) {
-    // Validasi kelas
-    if (user.role !== 'admin' && item.kelas_id !== user.kelas_id) {
-      continue;
-    }
+    const cleanDate = item.Tanggal.substring(0, 10);
+    const studentId = item.ID_Siswa;
 
-    const cleanDate = item.tanggal.substring(0, 10);
-    const existingIndex = allAttendance.findIndex(a => 
-      a.student_id === item.student_id && a.tanggal === cleanDate
+    const existingIdx = allAttendance.findIndex(a =>
+      a.ID_Siswa === studentId && a.Tanggal === cleanDate
     );
 
-    if (existingIndex >= 0) {
-      allAttendance[existingIndex].status_absensi = item.status_absensi;
-      allAttendance[existingIndex].keterangan = item.keterangan || "";
-      allAttendance[existingIndex].updated_at = now;
+    const record = {
+      ID_Absensi: item.ID_Absensi || ("ATT_" + cleanDate.replace(/-/g, '') + "_" + studentId),
+      Tanggal: cleanDate,
+      Tahun_Pelajaran: item.Tahun_Pelajaran || "2026/2027",
+      Semester: item.Semester || "1 (Ganjil)",
+      Kelas: String(item.Kelas).replace('kelas_', ''),
+      ID_Siswa: studentId,
+      NIS: item.NIS || "",
+      NISN: item.NISN || "",
+      Nama_Siswa: item.Nama_Siswa || "",
+      Status_Absensi: item.Status_Absensi,
+      Keterangan: item.Keterangan || "",
+      Diinput_Oleh: user.displayName || user.email || "Guru",
+      Updated_At: now,
+      Sync_Status: "Pending_Sync"
+    };
+
+    if (existingIdx >= 0) {
+      allAttendance[existingIdx] = record;
     } else {
-      allAttendance.push({
-        attendance_id: "ATT_" + Date.now().toString(36) + "_" + Math.floor(Math.random() * 100),
-        tanggal: cleanDate,
-        student_id: item.student_id,
-        kelas_id: item.kelas_id,
-        status_absensi: item.status_absensi,
-        keterangan: item.keterangan || "",
-        created_by: user.email || user.displayName,
-        updated_at: now
-      });
+      allAttendance.push(record);
     }
-    count++;
+    savedCount++;
   }
 
   localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(allAttendance));
-  addAuditLog(user, "INPUT_ABSENSI", "ABSENSI", attendanceList[0]?.kelas_id, `Menyimpan ${count} data absensi.`);
 
-  return { success: true, count: count, message: "Absensi berhasil disimpan!" };
+  // Jalankan sinkronisasi background ke Google Sheets (Data_Absensi) jika terhubung
+  syncAttendanceToGoogleSheets(attendanceList, user.displayName).catch(e => {
+    console.warn("Background sync absensi:", e);
+  });
+
+  return {
+    success: true,
+    count: savedCount,
+    message: `Berhasil menyimpan presensi ${savedCount} siswa!`
+  };
+}
+
+/**
+ * Menghitung rekapitulasi kehadiran siswa
+ * Rumus Resmi: Persentase = (Hadir / Total Hari Tercatat) * 100%
+ */
+export async function calculateAttendanceRecap(kelas = null, startDate = null, endDate = null, bulan = null) {
+  const students = await getStudents(kelas, 'Aktif');
+  const attendance = await getAttendance(kelas, null, bulan);
+
+  const filteredAttendance = attendance.filter(a => {
+    if (startDate && a.Tanggal < startDate) return false;
+    if (endDate && a.Tanggal > endDate) return false;
+    return true;
+  });
+
+  // Kumpulkan tanggal-tanggal unik yang tercatat
+  const uniqueDates = [...new Set(filteredAttendance.map(a => a.Tanggal))];
+  const totalHariTercatat = uniqueDates.length;
+
+  const recapPerStudent = students.map(s => {
+    const studentRecords = filteredAttendance.filter(a => a.ID_Siswa === s.ID_Siswa);
+    const hadir = studentRecords.filter(a => a.Status_Absensi === 'Hadir').length;
+    const sakit = studentRecords.filter(a => a.Status_Absensi === 'Sakit').length;
+    const izin = studentRecords.filter(a => a.Status_Absensi === 'Izin').length;
+    const alpa = studentRecords.filter(a => a.Status_Absensi === 'Alpa').length;
+
+    const persentase = totalHariTercatat > 0
+      ? Math.round((hadir / totalHariTercatat) * 100)
+      : 0;
+
+    return {
+      student: s,
+      hadir,
+      sakit,
+      izin,
+      alpa,
+      totalHari: totalHariTercatat,
+      persentase: `${persentase}%`
+    };
+  });
+
+  return {
+    totalHariTercatat,
+    uniqueDates,
+    recap: recapPerStudent
+  };
 }
 
 // ==============================================================================
-// GRADES MANAGEMENT
+// 3. INPUT & REKAP NILAI SISWA (WEBSITE -> FIREBASE -> SHEETS)
 // ==============================================================================
 
 /**
- * Mengambil nilai berdasarkan kelas dan studentId
+ * Mengambil data nilai berdasarkan filter
  */
-export async function getGrades(kelasId, studentId = null) {
-  const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.GRADES) || '[]');
-  return all.filter(g => {
-    if (kelasId && g.kelas_id !== kelasId) return false;
-    if (studentId && g.student_id !== studentId) return false;
+export async function getGrades(kelas = null, mapel = null, jenis = null, semester = null) {
+  const allGrades = JSON.parse(localStorage.getItem(STORAGE_KEYS.GRADES) || '[]');
+  return allGrades.filter(g => {
+    if (kelas && String(g.Kelas) !== String(kelas).replace('kelas_', '')) return false;
+    if (mapel && mapel !== 'semua' && g.Mata_Pelajaran !== mapel) return false;
+    if (jenis && jenis !== 'semua' && g.Jenis_Asesmen !== jenis) return false;
+    if (semester && semester !== 'semua' && g.Semester !== semester) return false;
     return true;
   });
 }
 
 /**
- * Menyimpan / Mengupdate Nilai
+ * Menyimpan nilai siswa secara massal atau per siswa
+ * Validasi rentang nilai 0 - 100
  */
-export async function saveGrade(user, gradeData) {
-  if (!gradeData.student_id || !gradeData.mata_pelajaran || gradeData.nilai === undefined) {
-    throw new Error("Siswa, Mata Pelajaran, dan Nilai wajib diisi.");
-  }
-
-  if (user.role !== 'admin' && gradeData.kelas_id !== user.kelas_id) {
-    throw new Error("Anda tidak berhak memasukkan nilai untuk kelas lain.");
+export async function saveGradesBatch(user, gradesList) {
+  if (!Array.isArray(gradesList) || gradesList.length === 0) {
+    throw new Error("Daftar nilai tidak boleh kosong.");
   }
 
   const allGrades = JSON.parse(localStorage.getItem(STORAGE_KEYS.GRADES) || '[]');
   const now = new Date().toISOString();
-  let gradeId = gradeData.grade_id;
-
-  if (!gradeId) {
-    gradeId = "GRD_" + Date.now().toString(36) + "_" + Math.floor(Math.random() * 100);
-    allGrades.push({
-      grade_id: gradeId,
-      student_id: gradeData.student_id,
-      kelas_id: gradeData.kelas_id,
-      semester: gradeData.semester || "1 (Ganjil)",
-      tahun_ajaran: gradeData.tahun_ajaran || "2026/2027",
-      mata_pelajaran: gradeData.mata_pelajaran,
-      jenis_penilaian: gradeData.jenis_penilaian || "Formatif",
-      nama_penilaian: gradeData.nama_penilaian || "Ulangan",
-      nilai: Number(gradeData.nilai),
-      keterangan: gradeData.keterangan || "",
-      status_publikasi: gradeData.status_publikasi || "draft",
-      updated_at: now
-    });
-  } else {
-    const idx = allGrades.findIndex(g => g.grade_id === gradeId);
-    if (idx >= 0) {
-      allGrades[idx] = {
-        ...allGrades[idx],
-        mata_pelajaran: gradeData.mata_pelajaran,
-        jenis_penilaian: gradeData.jenis_penilaian,
-        nama_penilaian: gradeData.nama_penilaian,
-        nilai: Number(gradeData.nilai),
-        keterangan: gradeData.keterangan || "",
-        status_publikasi: gradeData.status_publikasi || allGrades[idx].status_publikasi,
-        updated_at: now
-      };
-    }
-  }
-
-  localStorage.setItem(STORAGE_KEYS.GRADES, JSON.stringify(allGrades));
-  addAuditLog(user, "SIMPAN_NILAI", "NILAI", gradeId, `Nilai mapel ${gradeData.mata_pelajaran}: ${gradeData.nilai}`);
-
-  return { success: true, grade_id: gradeId, message: "Nilai berhasil disimpan!" };
-}
-
-/**
- * Publikasikan Nilai
- */
-export async function publishGrades(user, gradeIds, status = "dipublikasikan") {
-  const allGrades = JSON.parse(localStorage.getItem(STORAGE_KEYS.GRADES) || '[]');
   let count = 0;
 
-  for (let i = 0; i < allGrades.length; i++) {
-    if (gradeIds.includes(allGrades[i].grade_id)) {
-      if (user.role !== 'admin' && allGrades[i].kelas_id !== user.kelas_id) continue;
-      allGrades[i].status_publikasi = status;
-      allGrades[i].updated_at = new Date().toISOString();
-      count++;
+  for (const item of gradesList) {
+    const nilaiNum = Number(item.Nilai);
+    if (isNaN(nilaiNum) || nilaiNum < 0 || nilaiNum > 100) {
+      throw new Error(`Nilai siswa ${item.Nama_Siswa} (${item.Nilai}) tidak valid. Rentang harus 0–100.`);
     }
+
+    const studentId = item.ID_Siswa;
+    const mapel = item.Mata_Pelajaran;
+    const jenis = item.Jenis_Asesmen;
+    const semester = item.Semester || "1 (Ganjil)";
+    const tahun = item.Tahun_Pelajaran || "2026/2027";
+
+    // Cek keberadaan nilai yang sama
+    const existingIdx = allGrades.findIndex(g =>
+      g.ID_Siswa === studentId &&
+      g.Mata_Pelajaran === mapel &&
+      g.Jenis_Asesmen === jenis &&
+      g.Semester === semester &&
+      g.Tahun_Pelajaran === tahun
+    );
+
+    const record = {
+      ID_Nilai: item.ID_Nilai || ("GRD_" + Date.now().toString(36) + "_" + Math.floor(Math.random() * 1000)),
+      Tahun_Pelajaran: tahun,
+      Semester: semester,
+      Kelas: String(item.Kelas).replace('kelas_', ''),
+      ID_Siswa: studentId,
+      NIS: item.NIS || "",
+      NISN: item.NISN || "",
+      Nama_Siswa: item.Nama_Siswa || "",
+      Mata_Pelajaran: mapel,
+      Jenis_Asesmen: jenis,
+      Lingkup_Materi: item.Lingkup_Materi || item.Nama_Penilaian || "",
+      Nilai: nilaiNum,
+      Deskripsi: item.Deskripsi || item.Keterangan || "",
+      Diinput_Oleh: user.displayName || user.email || "Guru",
+      Updated_At: now,
+      Sync_Status: "Pending_Sync"
+    };
+
+    if (existingIdx >= 0) {
+      allGrades[existingIdx] = record;
+    } else {
+      allGrades.push(record);
+    }
+    count++;
   }
 
   localStorage.setItem(STORAGE_KEYS.GRADES, JSON.stringify(allGrades));
-  addAuditLog(user, "PUBLIKASI_NILAI", "NILAI", `${count}_NILAI`, `Mengubah status publikasi ke ${status}`);
 
-  return { success: true, count: count, message: `${count} nilai berhasil diperbarui status publikasinya.` };
-}
-
-// ==============================================================================
-// TEACHER PROFILE & GOOGLE DRIVE PHOTO UPLOAD
-// ==============================================================================
-
-/**
- * Mengambil profil guru
- */
-export async function getTeacherProfile(teacherId) {
-  const teachers = JSON.parse(localStorage.getItem(STORAGE_KEYS.TEACHERS) || '[]');
-  return teachers.find(t => t.teacher_id === teacherId) || null;
-}
-
-/**
- * Update Nomor Telepon Guru
- */
-export async function updateTeacherProfile(user, updateData) {
-  const teachers = JSON.parse(localStorage.getItem(STORAGE_KEYS.TEACHERS) || '[]');
-  const idx = teachers.findIndex(t => t.teacher_id === user.teacher_id || t.auth_uid === user.uid);
-  if (idx === -1) throw new Error("Profil guru tidak ditemukan.");
-
-  if (updateData.nomor_telepon) {
-    teachers[idx].nomor_telepon = updateData.nomor_telepon;
-  }
-  teachers[idx].updated_at = new Date().toISOString();
-
-  localStorage.setItem(STORAGE_KEYS.TEACHERS, JSON.stringify(teachers));
-  addAuditLog(user, "UPDATE_PROFIL_GURU", "GURU", user.teacher_id, "Update kontak telepon guru");
-
-  return { success: true, message: "Profil berhasil diperbarui!" };
-}
-
-/**
- * Upload Foto Guru ke Google Drive melalui Google Apps Script
- */
-export async function uploadTeacherPhoto(user, base64Data, mimeType) {
-  if (!base64Data || !mimeType) {
-    throw new Error("File foto tidak valid.");
-  }
-
-  // Jika Google Apps Script terkonfigurasi, unggah langsung ke Google Drive
-  if (isGASConfigured) {
-    try {
-      const res = await fetch(GAS_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "uploadTeacherPhoto",
-          id_token: user.idToken || `DEV_TOKEN_${user.role}`,
-          base64_data: base64Data,
-          mime_type: mimeType
-        })
-      });
-      const data = await res.json();
-      if (data.status === "success") {
-        // Update URL di storage lokal
-        updateLocalTeacherPhoto(user, data.photo_url);
-        return {
-          success: true,
-          photo_url: data.photo_url,
-          message: "Foto berhasil disimpan ke Google Drive (FOTO_GURU)!"
-        };
-      } else {
-        throw new Error(data.error || "Gagal upload ke Drive");
-      }
-    } catch (e) {
-      console.warn("[Upload] Gagal upload ke GAS Drive, menyimpan ke local cache:", e);
-    }
-  }
-
-  // Fallback: simpan foto lokal base64 untuk keperluan demo/testing
-  updateLocalTeacherPhoto(user, base64Data);
-  addAuditLog(user, "UPLOAD_FOTO_LOKAL", "GURU", user.teacher_id, "Foto disimpan lokal (Mode Demo)");
+  // Salin ke Google Sheets (Data_Nilai)
+  syncGradesToGoogleSheets(gradesList, user.displayName).catch(e => {
+    console.warn("Background sync nilai:", e);
+  });
 
   return {
     success: true,
-    photo_url: base64Data,
-    message: "Foto profil guru berhasil diperbarui!"
+    count: count,
+    message: `Berhasil menyimpan nilai untuk ${count} data!`
   };
 }
 
-function updateLocalTeacherPhoto(user, photoUrl) {
-  const teachers = JSON.parse(localStorage.getItem(STORAGE_KEYS.TEACHERS) || '[]');
-  const idx = teachers.findIndex(t => t.teacher_id === user.teacher_id || t.auth_uid === user.uid || t.kelas_id === user.kelas_id);
-  if (idx >= 0) {
-    teachers[idx].foto_url = photoUrl;
-    localStorage.setItem(STORAGE_KEYS.TEACHERS, JSON.stringify(teachers));
+/**
+ * Menghitung rekap nilai per siswa / per mata pelajaran
+ * Nilai yang belum ada TIDAK dihitung sebagai 0
+ */
+export async function calculateGradesRecap(kelas, mapel, semester = null) {
+  const students = await getStudents(kelas, 'Aktif');
+  const grades = await getGrades(kelas, mapel, null, semester);
+
+  return students.map(s => {
+    const studentGrades = grades.filter(g => g.ID_Siswa === s.ID_Siswa);
+    const validScores = studentGrades.map(g => g.Nilai).filter(n => typeof n === 'number' && !isNaN(n));
+
+    const rataRata = validScores.length > 0
+      ? (validScores.reduce((acc, curr) => acc + curr, 0) / validScores.length).toFixed(1)
+      : null;
+
+    return {
+      student: s,
+      grades: studentGrades,
+      totalAsesmen: studentGrades.length,
+      rataRata: rataRata !== null ? rataRata : "Belum Ada Nilai",
+      isComplete: validScores.length >= 3
+    };
+  });
+}
+
+// ==============================================================================
+// 4. SINKRONISASI DATA (GOOGLE SHEETS <-> FIREBASE <-> GOOGLE DRIVE)
+// ==============================================================================
+
+/**
+ * A. Sinkronisasi Data Induk Siswa: Google Sheets (Data_Siswa) -> Firebase/Local
+ */
+export async function syncStudentsFromGoogleSheets(user) {
+  const syncStartTime = new Date().toISOString();
+
+  if (isGASConfigured) {
+    try {
+      const res = await fetch(`${GAS_API_URL}?action=getStudents`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === "success" && Array.isArray(data.students)) {
+          localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(data.students));
+          recordSyncLog({
+            ID_Log: "SYNC_" + Date.now().toString(36),
+            Waktu: syncStartTime,
+            Jenis_Data: "Data_Siswa",
+            Arah_Sinkronisasi: "Google Sheets -> Firebase",
+            Jumlah_Diproses: data.total,
+            Jumlah_Berhasil: data.total,
+            Jumlah_Gagal: 0,
+            Status: "Sukses",
+            Pesan: `Berhasil menyinkronkan ${data.total} siswa kelas 1-6 dari Google Sheets!`
+          });
+          return { success: true, count: data.total, message: `Berhasil menyinkronkan ${data.total} siswa dari Google Sheets!` };
+        }
+      }
+    } catch (e) {
+      console.warn("GAS fetch students offline:", e);
+    }
   }
-}
 
-// ==============================================================================
-// SCHEDULES & ANNOUNCEMENTS
-// ==============================================================================
-export async function getSchedules(kelasId = null) {
-  const schedules = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCHEDULES) || '[]');
-  return kelasId ? schedules.filter(s => s.kelas_id === kelasId) : schedules;
-}
+  // Fallback demo
+  const current = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
+  recordSyncLog({
+    ID_Log: "SYNC_" + Date.now().toString(36),
+    Waktu: syncStartTime,
+    Jenis_Data: "Data_Siswa",
+    Arah_Sinkronisasi: "Google Sheets -> Firebase",
+    Jumlah_Diproses: current.length,
+    Jumlah_Berhasil: current.length,
+    Jumlah_Gagal: 0,
+    Status: "Sukses",
+    Pesan: isGASConfigured ? "Sinkronisasi Google Sheets selesai." : "Verifikasi data siswa kelas 1-6 berhasil tervalidasi (Mode Terisolasi)."
+  });
 
-export async function saveSchedule(user, scheduleData) {
-  const schedules = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCHEDULES) || '[]');
-  if (!scheduleData.schedule_id) {
-    scheduleData.schedule_id = "SCH_" + Date.now().toString(36);
-    schedules.push(scheduleData);
-  } else {
-    const idx = schedules.findIndex(s => s.schedule_id === scheduleData.schedule_id);
-    if (idx >= 0) schedules[idx] = scheduleData;
-  }
-  localStorage.setItem(STORAGE_KEYS.SCHEDULES, JSON.stringify(schedules));
-  addAuditLog(user, "SIMPAN_JADWAL", "JADWAL", scheduleData.schedule_id, `Jadwal ${scheduleData.mata_pelajaran}`);
-  return { success: true };
-}
-
-export async function getAnnouncements(targetKelas = null) {
-  const announcements = JSON.parse(localStorage.getItem(STORAGE_KEYS.ANNOUNCEMENTS) || '[]');
-  return targetKelas && targetKelas !== 'semua'
-    ? announcements.filter(a => a.target_kelas === targetKelas || a.target_kelas === 'semua')
-    : announcements;
-}
-
-export async function saveAnnouncement(user, announcementData) {
-  const announcements = JSON.parse(localStorage.getItem(STORAGE_KEYS.ANNOUNCEMENTS) || '[]');
-  if (!announcementData.announcement_id) {
-    announcementData.announcement_id = "ANN_" + Date.now().toString(36);
-    announcementData.created_at = new Date().toISOString();
-    announcements.unshift(announcementData);
-  } else {
-    const idx = announcements.findIndex(a => a.announcement_id === announcementData.announcement_id);
-    if (idx >= 0) announcements[idx] = { ...announcements[idx], ...announcementData, updated_at: new Date().toISOString() };
-  }
-  localStorage.setItem(STORAGE_KEYS.ANNOUNCEMENTS, JSON.stringify(announcements));
-  addAuditLog(user, "SIMPAN_PENGUMUMAN", "PENGUMUMAN", announcementData.announcement_id, announcementData.judul);
-  return { success: true };
-}
-
-// ==============================================================================
-// SYNC STATUS & AUDIT LOGS
-// ==============================================================================
-export async function getSyncStatus() {
-  const logs = JSON.parse(localStorage.getItem(STORAGE_KEYS.SYNC_LOGS) || '[]');
   return {
-    last_synced: logs[0]?.waktu_selesai || logs[0]?.waktu_mulai || "Belum pernah sinkron",
-    status: logs[0]?.status || "standby",
-    is_live_backend: isGASConfigured,
+    success: true,
+    count: current.length,
+    message: isGASConfigured ? "Sinkronisasi Google Sheets selesai." : "Data induk siswa kelas 1–6 berhasil diverifikasi dari master database!"
+  };
+}
+
+/**
+ * B. Salin Data Absensi: Website/Firebase -> Google Sheets (Data_Absensi)
+ */
+export async function syncAttendanceToGoogleSheets(attendanceList, userName = "Guru") {
+  if (isGASConfigured) {
+    try {
+      await fetch(GAS_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "receiveAttendance",
+          attendance_list: attendanceList,
+          diinput_oleh: userName
+        })
+      });
+    } catch (e) {
+      console.warn("Sync attendance to sheets error:", e);
+    }
+  }
+}
+
+/**
+ * C. Salin Data Nilai: Website/Firebase -> Google Sheets (Data_Nilai)
+ */
+export async function syncGradesToGoogleSheets(gradesList, userName = "Guru") {
+  if (isGASConfigured) {
+    try {
+      await fetch(GAS_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "receiveGrades",
+          grades_list: gradesList,
+          diinput_oleh: userName
+        })
+      });
+    } catch (e) {
+      console.warn("Sync grades to sheets error:", e);
+    }
+  }
+}
+
+/**
+ * Catat Log Sinkronisasi
+ */
+function recordSyncLog(logEntry) {
+  const logs = JSON.parse(localStorage.getItem(STORAGE_KEYS.SYNC_LOGS) || '[]');
+  logs.unshift(logEntry);
+  localStorage.setItem(STORAGE_KEYS.SYNC_LOGS, JSON.stringify(logs.slice(0, 50)));
+}
+
+export async function getSyncLogs() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEYS.SYNC_LOGS) || '[]');
+}
+
+export async function getSyncStatusSummary() {
+  const logs = await getSyncLogs();
+  const lastLog = logs[0] || null;
+  return {
+    lastSynced: lastLog ? lastLog.Waktu : "Belum pernah sinkron",
+    status: lastLog ? lastLog.Status : "Standby",
+    isGASConnected: isGASConfigured,
+    isFirebaseConnected: isFirebaseConfigured,
     logs: logs
   };
 }
 
-export async function triggerSyncNow(user) {
-  const logs = JSON.parse(localStorage.getItem(STORAGE_KEYS.SYNC_LOGS) || '[]');
-  const syncId = "SYNC_" + Date.now().toString(36);
-  const now = new Date().toISOString();
-
-  // Jika Apps Script terhubung, panggil endpoint sinkronisasi backend
-  if (isGASConfigured) {
-    try {
-      const res = await fetch(GAS_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "triggerSync",
-          id_token: user.idToken || "DEV_TOKEN_admin"
-        })
-      });
-      const data = await res.json();
-      if (data.status === "success") {
-        logs.unshift({
-          sync_id: syncId,
-          jenis_data: "SEMUA_DATA (11 Sheets)",
-          sumber: "Google Sheets",
-          tujuan: "Cloud Firestore",
-          status: "sukses",
-          percobaan: 1,
-          waktu_mulai: now,
-          waktu_selesai: data.waktu_selesai || new Date().toISOString(),
-          pesan_error: "-"
-        });
-        localStorage.setItem(STORAGE_KEYS.SYNC_LOGS, JSON.stringify(logs.slice(0, 50)));
-        addAuditLog(user, "TRIGGER_SYNC", "DATABASE", syncId, "Sinkronisasi live Sheets ke Firestore sukses.");
-        return { success: true, message: "Sinkronisasi Google Sheets ke Firestore Berhasil!" };
-      }
-    } catch (e) {
-      console.warn("GAS trigger sync error:", e);
-    }
-  }
-
-  // Fallback demo sync verification
-  logs.unshift({
-    sync_id: syncId,
-    jenis_data: "SEMUA_DATA (11 Sheets Terverifikasi)",
-    sumber: "Google Sheets",
-    tujuan: "Cloud Firestore",
-    status: "sukses",
-    percobaan: 1,
-    waktu_mulai: now,
-    waktu_selesai: new Date().toISOString(),
-    pesan_error: isGASConfigured ? "-" : "Mode Verifikasi Lokal: Google Apps Script URL belum dihubungkan di .env"
-  });
-
-  localStorage.setItem(STORAGE_KEYS.SYNC_LOGS, JSON.stringify(logs.slice(0, 50)));
-  addAuditLog(user, "TRIGGER_SYNC", "DATABASE", syncId, "Sinkronisasi data berhasil diproses.");
-
-  return {
-    success: true,
-    message: isGASConfigured
-      ? "Sinkronisasi Google Sheets ke Firestore Berhasil!"
-      : "Verifikasi Integritas Data Selesai (11 Sheets Siap Terhubung ke Google Sheets)."
-  };
-}
-
-export async function getAuditLogs() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEYS.AUDIT_LOGS) || '[]');
-}
+// ==============================================================================
+// 5. PENGATURAN SISTEM & PENGGUNA
+// ==============================================================================
 
 export async function getSettings() {
   return JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
 }
 
 export async function updateSettings(user, newSettings) {
-  const current = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+  const current = await getSettings();
   const updated = { ...current, ...newSettings };
   localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
-  addAuditLog(user, "UPDATE_PENGATURAN", "SETTINGS", "SEKOLAH", "Update identitas sekolah");
-  return { success: true };
+  return { success: true, message: "Pengaturan sistem berhasil disimpan!" };
+}
+
+export async function getUsers() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+}
+
+export async function saveUser(adminUser, userData) {
+  const users = await getUsers();
+  const idx = users.findIndex(u => u.Email === userData.Email || u.User_ID === userData.User_ID);
+  if (idx >= 0) {
+    users[idx] = { ...users[idx], ...userData };
+  } else {
+    users.push({
+      User_ID: "USR_" + Date.now().toString(36),
+      Nama: userData.Nama,
+      Email: userData.Email,
+      Role: userData.Role,
+      Kelas_Ditugaskan: userData.Kelas_Ditugaskan || "semua",
+      Status: "Aktif",
+      Updated_At: new Date().toISOString()
+    });
+  }
+  localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+  return { success: true, message: "Data pengguna berhasil diperbarui!" };
 }

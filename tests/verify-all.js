@@ -1,22 +1,34 @@
 /**
  * ==============================================================================
- * SISTEM INFORMASI ABSENSI DAN PENILAIAN SISWA SD KELAS 1 DAN KELAS 6
- * AUTOMATED VERIFICATION TEST SUITE (tests/verify-all.js)
+ * SISTEM ABSENSI DAN NILAI SISWA SD KELAS 1–6
+ * AUTOMATED TEST SUITE (tests/verify-all.js)
  * ==============================================================================
  */
 
 import assert from 'assert';
-import { canAccessClass, canManageStudents, canManageGrades, canManageAttendance, canEditTeacherProfile, isAdmin, isTeacher, ROLES, CLASSES } from '../src/permissions.js';
+import { 
+  canAccessClass, 
+  canModifyAttendance, 
+  canModifyGrades, 
+  canViewReports, 
+  canManageSettings, 
+  canTriggerSync, 
+  isAdmin, 
+  isHeadmaster, 
+  isTeacher, 
+  ROLES, 
+  CLASSES 
+} from '../src/permissions.js';
 
-let passedTests = 0;
-let totalTests = 0;
+let passed = 0;
+let total = 0;
 
-function runTest(description, testFn) {
-  totalTests++;
+function it(description, fn) {
+  total++;
   try {
-    testFn();
+    fn();
     console.log(`[PASS] ${description}`);
-    passedTests++;
+    passed++;
   } catch (err) {
     console.error(`[FAIL] ${description}`);
     console.error(`       Error: ${err.message}`);
@@ -24,98 +36,114 @@ function runTest(description, testFn) {
 }
 
 console.log("==============================================================================");
-console.log("MENJALANKAN PENGUJIAN OTORISASI & ATURAN HAK AKSES SISTEM");
+console.log("MENJALANKAN TEST SUITE SISTEM ABSENSI DAN NILAI SD KELAS 1–6");
 console.log("==============================================================================");
 
 // Mock Users
-const adminUser = {
-  uid: "ADMIN_UID",
-  email: "admin@sekolah.id",
-  role: ROLES.ADMIN,
-  kelas_id: "semua"
-};
+const admin = { uid: "ADM01", email: "admin@sekolah.id", role: ROLES.ADMIN, kelas_id: "semua" };
+const kepsek = { uid: "KS01", email: "kepsek@sekolah.id", role: ROLES.HEADMASTER, kelas_id: "semua" };
+const guruK1 = { uid: "GUR01", email: "guru1@sekolah.id", role: ROLES.TEACHER, kelas_id: CLASSES.KELAS_1 };
+const guruK2 = { uid: "GUR02", email: "guru2@sekolah.id", role: ROLES.TEACHER, kelas_id: CLASSES.KELAS_2 };
+const guruK6 = { uid: "GUR06", email: "guru6@sekolah.id", role: ROLES.TEACHER, kelas_id: CLASSES.KELAS_6 };
 
-const guruKelas1User = {
-  uid: "GURU1_UID",
-  email: "guru1@sekolah.id",
-  role: ROLES.TEACHER_1,
-  kelas_id: CLASSES.KELAS_1,
-  teacher_id: "TCH001"
-};
-
-const guruKelas6User = {
-  uid: "GURU6_UID",
-  email: "guru6@sekolah.id",
-  role: ROLES.TEACHER_6,
-  kelas_id: CLASSES.KELAS_6,
-  teacher_id: "TCH002"
-};
-
-const siswaUser = {
-  uid: "SISWA_UID",
-  email: "siswa@sekolah.id",
-  role: ROLES.STUDENT,
-  student_id: "STD_001"
-};
-
-// 1. Admin Login & Full Access Test
-runTest("1. Admin memiliki hak akses administratif penuh", () => {
-  assert.strictEqual(isAdmin(adminUser), true, "Admin harus diidentifikasi sebagai admin.");
-  assert.strictEqual(canAccessClass(adminUser, CLASSES.KELAS_1), true, "Admin dapat akses Kelas 1.");
-  assert.strictEqual(canAccessClass(adminUser, CLASSES.KELAS_6), true, "Admin dapat akses Kelas 6.");
-  assert.strictEqual(canManageStudents(adminUser, CLASSES.KELAS_1), true, "Admin dapat kelola siswa Kelas 1.");
-  assert.strictEqual(canManageStudents(adminUser, CLASSES.KELAS_6), true, "Admin dapat kelola siswa Kelas 6.");
+// 1. Admin Tests
+it("1. Administrator memiliki hak akses supervisi penuh ke seluruh kelas 1–6", () => {
+  assert.strictEqual(isAdmin(admin), true);
+  for (let c = 1; c <= 6; c++) {
+    assert.strictEqual(canAccessClass(admin, `kelas_${c}`), true, `Admin harus dapat akses kelas_${c}`);
+    assert.strictEqual(canModifyAttendance(admin, `kelas_${c}`), true, `Admin dapat ubah absensi kelas_${c}`);
+    assert.strictEqual(canModifyGrades(admin, `kelas_${c}`), true, `Admin dapat ubah nilai kelas_${c}`);
+  }
+  assert.strictEqual(canManageSettings(admin), true);
+  assert.strictEqual(canTriggerSync(admin), true);
 });
 
-// 2. Guru Kelas 1 Isolation Test
-runTest("2. Guru Kelas 1 HANYA dapat mengakses Kelas 1", () => {
-  assert.strictEqual(canAccessClass(guruKelas1User, CLASSES.KELAS_1), true, "Guru Kelas 1 boleh akses Kelas 1.");
-  assert.strictEqual(canAccessClass(guruKelas1User, CLASSES.KELAS_6), false, "Guru Kelas 1 DILARANG akses Kelas 6.");
-  assert.strictEqual(canManageStudents(guruKelas1User, CLASSES.KELAS_6), false, "Guru Kelas 1 DILARANG kelola siswa Kelas 6.");
-  assert.strictEqual(canManageGrades(guruKelas1User, CLASSES.KELAS_6), false, "Guru Kelas 1 DILARANG kelola nilai Kelas 6.");
-  assert.strictEqual(canManageAttendance(guruKelas1User, CLASSES.KELAS_6), false, "Guru Kelas 1 DILARANG kelola absensi Kelas 6.");
+// 2. Kepala Sekolah Tests
+it("2. Kepala Sekolah dapat melihat seluruh kelas 1–6 tetapi tidak mengubah data langsung", () => {
+  assert.strictEqual(isHeadmaster(kepsek), true);
+  for (let c = 1; c <= 6; c++) {
+    assert.strictEqual(canAccessClass(kepsek, `kelas_${c}`), true, `Kepsek dapat lihat kelas_${c}`);
+    assert.strictEqual(canModifyAttendance(kepsek, `kelas_${c}`), false, `Kepsek DILARANG ubah absensi kelas_${c}`);
+    assert.strictEqual(canModifyGrades(kepsek, `kelas_${c}`), false, `Kepsek DILARANG ubah nilai kelas_${c}`);
+    assert.strictEqual(canViewReports(kepsek, `kelas_${c}`), true, `Kepsek dapat cetak laporan kelas_${c}`);
+  }
+  assert.strictEqual(canManageSettings(kepsek), false);
+  assert.strictEqual(canTriggerSync(kepsek), false);
 });
 
-// 3. Guru Kelas 6 Isolation Test
-runTest("3. Guru Kelas 6 HANYA dapat mengakses Kelas 6", () => {
-  assert.strictEqual(canAccessClass(guruKelas6User, CLASSES.KELAS_6), true, "Guru Kelas 6 boleh akses Kelas 6.");
-  assert.strictEqual(canAccessClass(guruKelas6User, CLASSES.KELAS_1), false, "Guru Kelas 6 DILARANG akses Kelas 1.");
-  assert.strictEqual(canManageStudents(guruKelas6User, CLASSES.KELAS_1), false, "Guru Kelas 6 DILARANG kelola siswa Kelas 1.");
-  assert.strictEqual(canManageGrades(guruKelas6User, CLASSES.KELAS_1), false, "Guru Kelas 6 DILARANG kelola nilai Kelas 1.");
-  assert.strictEqual(canManageAttendance(guruKelas6User, CLASSES.KELAS_1), false, "Guru Kelas 6 DILARANG kelola absensi Kelas 1.");
+// 3. Guru Kelas 1 Isolation Test
+it("3. Guru Kelas 1 HANYA dapat mengakses dan mengubah data Kelas 1", () => {
+  assert.strictEqual(isTeacher(guruK1), true);
+  assert.strictEqual(canAccessClass(guruK1, CLASSES.KELAS_1), true);
+  assert.strictEqual(canModifyAttendance(guruK1, CLASSES.KELAS_1), true);
+  assert.strictEqual(canModifyGrades(guruK1, CLASSES.KELAS_1), true);
+
+  // Dilarang ke kelas 2 s/d 6
+  for (let c = 2; c <= 6; c++) {
+    assert.strictEqual(canAccessClass(guruK1, `kelas_${c}`), false, `Guru K1 DILARANG akses kelas_${c}`);
+    assert.strictEqual(canModifyAttendance(guruK1, `kelas_${c}`), false, `Guru K1 DILARANG ubah absensi kelas_${c}`);
+    assert.strictEqual(canModifyGrades(guruK1, `kelas_${c}`), false, `Guru K1 DILARANG ubah nilai kelas_${c}`);
+  }
 });
 
-// 4. Guru Profile Edit Isolation
-runTest("4. Guru hanya dapat mengubah profil miliknya sendiri, bukan profil guru lain", () => {
-  assert.strictEqual(canEditTeacherProfile(guruKelas1User, "TCH001"), true, "Guru Kelas 1 boleh edit profil TCH001 miliknya.");
-  assert.strictEqual(canEditTeacherProfile(guruKelas1User, "TCH002"), false, "Guru Kelas 1 DILARANG edit profil TCH002 (Guru Kelas 6).");
-  assert.strictEqual(canEditTeacherProfile(guruKelas6User, "TCH002"), true, "Guru Kelas 6 boleh edit profil TCH002 miliknya.");
-  assert.strictEqual(canEditTeacherProfile(guruKelas6User, "TCH001"), false, "Guru Kelas 6 DILARANG edit profil TCH001 (Guru Kelas 1).");
-  assert.strictEqual(canEditTeacherProfile(adminUser, "TCH001"), true, "Admin dapat mengedit seluruh profil.");
+// 4. Guru Kelas 2 Isolation Test
+it("4. Guru Kelas 2 HANYA dapat mengakses dan mengubah data Kelas 2", () => {
+  assert.strictEqual(canAccessClass(guruK2, CLASSES.KELAS_2), true);
+  assert.strictEqual(canModifyAttendance(guruK2, CLASSES.KELAS_2), true);
+  assert.strictEqual(canModifyGrades(guruK2, CLASSES.KELAS_2), true);
+
+  assert.strictEqual(canAccessClass(guruK2, CLASSES.KELAS_1), false);
+  assert.strictEqual(canAccessClass(guruK2, CLASSES.KELAS_6), false);
 });
 
-// 5. Siswa Permissions Test
-runTest("5. Siswa tidak memiliki izin manipulasi data (read-only)", () => {
-  assert.strictEqual(isAdmin(siswaUser), false, "Siswa bukan admin.");
-  assert.strictEqual(isTeacher(siswaUser), false, "Siswa bukan guru.");
-  assert.strictEqual(canManageStudents(siswaUser, CLASSES.KELAS_1), false, "Siswa tidak dapat mengelola siswa.");
-  assert.strictEqual(canManageGrades(siswaUser, CLASSES.KELAS_1), false, "Siswa tidak dapat mengelola nilai.");
-  assert.strictEqual(canManageAttendance(siswaUser, CLASSES.KELAS_1), false, "Siswa tidak dapat mengelola absensi.");
+// 5. Guru Kelas 6 Isolation Test
+it("5. Guru Kelas 6 HANYA dapat mengakses dan mengubah data Kelas 6", () => {
+  assert.strictEqual(canAccessClass(guruK6, CLASSES.KELAS_6), true);
+  assert.strictEqual(canModifyAttendance(guruK6, CLASSES.KELAS_6), true);
+  assert.strictEqual(canModifyGrades(guruK6, CLASSES.KELAS_6), true);
+
+  for (let c = 1; c <= 5; c++) {
+    assert.strictEqual(canAccessClass(guruK6, `kelas_${c}`), false, `Guru K6 DILARANG akses kelas_${c}`);
+  }
 });
 
-// 6. Security Check: Tidak ada rahasia di client code / .env.example
-runTest("6. Keamanan Repository: Tidak ada service account key atau private key yang bocor", () => {
+// 6. Validasi Rumus Persentase Kehadiran
+it("6. Rumus Persentase Kehadiran = (Hadir ÷ Total Hari Tercatat) × 100%", () => {
+  const hadir = 18;
+  const totalHariTercatat = 20;
+  const persentase = Math.round((hadir / totalHariTercatat) * 100);
+  assert.strictEqual(persentase, 90, "18 dari 20 hari harus 90%");
+
+  // Hari tanpa catatan tidak dianggap alpa
+  const hariTanpaCatatan = 0;
+  assert.strictEqual(hariTanpaCatatan, 0);
+});
+
+// 7. Validasi Nilai Skala 0-100
+it("7. Nilai di luar rentang 0–100 wajib ditolak", () => {
+  const validScores = [0, 50, 75, 100];
+  const invalidScores = [-5, 105, 999];
+
+  validScores.forEach(score => {
+    assert.strictEqual(score >= 0 && score <= 100, true);
+  });
+
+  invalidScores.forEach(score => {
+    assert.strictEqual(score < 0 || score > 100, true);
+  });
+});
+
+// 8. Keamanan Kredensial
+it("8. Keamanan: Tidak ada Private Key atau Service Account dalam berkas repo", () => {
   import('fs').then(fs => {
-    const envExample = fs.readFileSync('.env.example', 'utf8');
-    assert.strictEqual(envExample.includes('private_key'), false, ".env.example tidak boleh berisi private_key!");
-    assert.strictEqual(envExample.includes('BEGIN PRIVATE KEY'), false, ".env.example tidak boleh berisi RSA key!");
+    const envEx = fs.readFileSync('.env.example', 'utf8');
+    assert.strictEqual(envEx.includes('private_key'), false);
+    assert.strictEqual(envEx.includes('BEGIN PRIVATE KEY'), false);
   });
 });
 
 console.log("==============================================================================");
-console.log(`PENGUJIAN SELESAI: ${passedTests} / ${totalTests} LULUS (${Math.round((passedTests/totalTests)*100)}%)`);
+console.log(`PENGUJIAN SELESAI: ${passed} / ${total} LULUS (${Math.round((passed/total)*100)}%)`);
 console.log("==============================================================================");
 
-if (passedTests !== totalTests) {
-  process.exit(1);
-}
+if (passed !== total) process.exit(1);

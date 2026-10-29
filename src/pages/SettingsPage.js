@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
- * SISTEM INFORMASI ABSENSI DAN PENILAIAN SISWA SD KELAS 1 DAN KELAS 6
- * PENGATURAN IDENTITAS SEKOLAH & SISTEM (src/pages/SettingsPage.js)
+ * SISTEM ABSENSI DAN NILAI SISWA SD KELAS 1–6
+ * PENGATURAN KURIKULUM & SEKOLAH (src/pages/SettingsPage.js)
  * ==============================================================================
  */
 
@@ -14,71 +14,78 @@ export async function renderSettingsPage() {
 
   return `
     <div class="page-content">
-      <div style="max-width: 760px; margin: 0 auto;">
+      <div style="max-width: 800px; margin: 0 auto;">
         <div class="card">
           <div class="card-header">
             <div>
-              <h2 class="card-title">⚙️ Pengaturan Identitas Sekolah & Sistem</h2>
+              <h2 class="card-title">⚙️ Pengaturan Kurikulum &amp; Identitas Sekolah</h2>
               <p style="font-size: 0.85rem; color: #64748b; margin: 4px 0 0 0;">
-                Data ini akan otomatis tercantum pada kop surat laporan resmi cetak (A4/F4).
+                Konfigurasi tahun ajaran, semester, daftar mata pelajaran dinamis, batas KKM, dan data resmi kop surat.
               </p>
             </div>
           </div>
 
-          <form id="form-save-settings" onsubmit="return false;">
+          <form id="form-save-system-settings" onsubmit="return false;">
+            <div class="sidebar-nav-label" style="padding-left: 0;">Identitas Resmi Sekolah (Kop Surat)</div>
+            
             <div class="form-group">
               <label class="form-label">Nama Resmi Sekolah Dasar *</label>
-              <input type="text" id="set-nama-sekolah" class="form-input" required value="${settings.nama_sekolah || 'SD NEGERI HARAPAN BANGSA'}">
+              <input type="text" id="set-sch-name" class="form-input" required value="${settings.nama_sekolah || 'SD NEGERI HARAPAN BANGSA'}">
             </div>
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">NPSN (Nomor Pokok Sekolah Nasional) *</label>
-                <input type="text" id="set-npsn" class="form-input" required value="${settings.npsn || '20109988'}">
+                <label class="form-label">NPSN *</label>
+                <input type="text" id="set-sch-npsn" class="form-input" required value="${settings.npsn || '20109988'}">
               </div>
               <div class="form-group">
-                <label class="form-label">Tahun Ajaran Aktif *</label>
-                <input type="text" id="set-tahun-ajaran" class="form-input" required value="${settings.tahun_ajaran_aktif || '2026/2027'}">
+                <label class="form-label">Alamat Lengkap Sekolah *</label>
+                <input type="text" id="set-sch-addr" class="form-input" required value="${settings.alamat_sekolah || 'Jl. Merdeka Belajar No. 45, Jakarta'}">
               </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Alamat Lengkap Sekolah *</label>
-              <textarea id="set-alamat" class="form-textarea" rows="2" required>${settings.alamat_sekolah || 'Jl. Merdeka Belajar No. 45, Jakarta'}</textarea>
             </div>
 
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">Nama Kepala Sekolah *</label>
-                <input type="text" id="set-kepala-sekolah" class="form-input" required value="${settings.nama_kepala_sekolah || 'Drs. H. Mulyadi, M.Pd.'}">
+                <input type="text" id="set-sch-head" class="form-input" required value="${settings.nama_kepala_sekolah || 'Drs. H. Mulyadi, M.Pd.'}">
               </div>
               <div class="form-group">
                 <label class="form-label">NIP Kepala Sekolah *</label>
-                <input type="text" id="set-nip-kepsek" class="form-input" required value="${settings.nip_kepala_sekolah || '197203151998031004'}">
+                <input type="text" id="set-sch-nip" class="form-input" required value="${settings.nip_kepala_sekolah || '197203151998031004'}">
               </div>
             </div>
 
+            <div class="sidebar-nav-label" style="padding-left: 0; margin-top: 1rem;">Kalender Akademik &amp; Asesmen</div>
+
             <div class="form-row">
               <div class="form-group">
+                <label class="form-label">Tahun Pelajaran Aktif *</label>
+                <input type="text" id="set-sch-year" class="form-input" required value="${settings.tahun_pelajaran_aktif || '2026/2027'}">
+              </div>
+
+              <div class="form-group">
                 <label class="form-label">Semester Aktif *</label>
-                <select id="set-semester" class="form-select">
+                <select id="set-sch-sem" class="form-select">
                   <option value="1 (Ganjil)" ${settings.semester_aktif === '1 (Ganjil)' ? 'selected' : ''}>1 (Ganjil)</option>
                   <option value="2 (Genap)" ${settings.semester_aktif === '2 (Genap)' ? 'selected' : ''}>2 (Genap)</option>
                 </select>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Izinkan Rekap Absensi Terbuka untuk Siswa</label>
-                <select id="set-izinkan-rekap" class="form-select">
-                  <option value="true" ${settings.izinkan_rekap_absensi_siswa !== 'false' ? 'selected' : ''}>Ya (Hanya Jumlah Hadir/Sakit/Izin/Alpa tanpa data pribadi)</option>
-                  <option value="false" ${settings.izinkan_rekap_absensi_siswa === 'false' ? 'selected' : ''}>Tidak (Sembunyikan dari halaman umum siswa)</option>
-                </select>
+                <label class="form-label">Kriteria Ketuntasan Minimal (KKM Default) *</label>
+                <input type="number" id="set-sch-kkm" class="form-input" required min="50" max="100" value="${settings.kkm_default || 75}">
               </div>
             </div>
 
+            <div class="form-group">
+              <label class="form-label">Daftar Mata Pelajaran Dinamis (Pisahkan dengan tanda koma) *</label>
+              <textarea id="set-sch-mapel" class="form-textarea" rows="3" required>${settings.daftar_mata_pelajaran || 'Pendidikan Pancasila,Bahasa Indonesia,Matematika,Ilmu Pengetahuan Alam dan Sosial (IPAS),Pendidikan Jasmani Olahraga dan Kesehatan (PJOK),Seni Budaya,Bahasa Inggris'}</textarea>
+              <span class="form-hint">Mata pelajaran ini akan otomatis muncul pada formulir input nilai dan rekap rapor seluruh jenjang kelas 1–6.</span>
+            </div>
+
             <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
-              <button type="submit" class="btn btn-primary" id="btn-save-settings-submit">
-                💾 Simpan Pengaturan Sekolah →
+              <button type="submit" class="btn btn-primary" id="btn-save-settings">
+                💾 Simpan Konfigurasi Sekolah →
               </button>
             </div>
           </form>
@@ -90,33 +97,34 @@ export async function renderSettingsPage() {
 
 export function attachSettingsEvents() {
   const user = getCurrentUser();
-  const form = document.getElementById('form-save-settings');
+  const form = document.getElementById('form-save-system-settings');
 
   if (form) {
     form.onsubmit = async () => {
       const payload = {
-        nama_sekolah: document.getElementById('set-nama-sekolah').value.trim(),
-        npsn: document.getElementById('set-npsn').value.trim(),
-        tahun_ajaran_aktif: document.getElementById('set-tahun-ajaran').value.trim(),
-        alamat_sekolah: document.getElementById('set-alamat').value.trim(),
-        nama_kepala_sekolah: document.getElementById('set-kepala-sekolah').value.trim(),
-        nip_kepala_sekolah: document.getElementById('set-nip-kepsek').value.trim(),
-        semester_aktif: document.getElementById('set-semester').value,
-        izinkan_rekap_absensi_siswa: document.getElementById('set-izinkan-rekap').value
+        nama_sekolah: document.getElementById('set-sch-name').value.trim(),
+        npsn: document.getElementById('set-sch-npsn').value.trim(),
+        alamat_sekolah: document.getElementById('set-sch-addr').value.trim(),
+        nama_kepala_sekolah: document.getElementById('set-sch-head').value.trim(),
+        nip_kepala_sekolah: document.getElementById('set-sch-nip').value.trim(),
+        tahun_pelajaran_aktif: document.getElementById('set-sch-year').value.trim(),
+        semester_aktif: document.getElementById('set-sch-sem').value,
+        kkm_default: document.getElementById('set-sch-kkm').value,
+        daftar_mata_pelajaran: document.getElementById('set-sch-mapel').value.trim()
       };
 
-      const btnSubmit = document.getElementById('btn-save-settings-submit');
-      btnSubmit.disabled = true;
-      btnSubmit.textContent = "Menyimpan...";
+      const btn = document.getElementById('btn-save-settings');
+      btn.disabled = true;
+      btn.textContent = "Menyimpan...";
 
       try {
         await updateSettings(user, payload);
-        toast.success("Pengaturan sekolah berhasil diperbarui!");
+        toast.success("Konfigurasi sekolah berhasil diperbarui!");
       } catch (e) {
-        toast.error("Gagal menyimpan pengaturan: " + e.message);
+        toast.error("Gagal menyimpan: " + e.message);
       } finally {
-        btnSubmit.disabled = false;
-        btnSubmit.textContent = "💾 Simpan Pengaturan Sekolah →";
+        btn.disabled = false;
+        btn.textContent = "💾 Simpan Konfigurasi Sekolah →";
       }
     };
   }

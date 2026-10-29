@@ -1,63 +1,40 @@
 /**
  * ==============================================================================
- * SISTEM INFORMASI ABSENSI DAN PENILAIAN SISWA SD KELAS 1 DAN KELAS 6
+ * SISTEM ABSENSI DAN NILAI SISWA SD KELAS 1–6
  * CLIENT-SIDE ROUTER & ACCESS GUARD (src/router.js)
  * ==============================================================================
  */
 
 import { getCurrentUser } from './auth.js';
-import { isAdmin, isTeacher } from './permissions.js';
+import { isAdmin, isHeadmaster, isTeacher } from './permissions.js';
 import { renderNavbar, attachNavbarEvents } from './components/Navbar.js';
 import { renderSidebar } from './components/Sidebar.js';
 import { toast } from './components/Toast.js';
 
 // Import Pages
-import { renderStudentPublicPage, attachStudentPublicEvents } from './pages/StudentPublicPage.js';
 import { renderLoginPage, attachLoginEvents } from './pages/LoginPage.js';
-import { renderAdminDashboard, attachAdminDashboardEvents } from './pages/AdminDashboard.js';
-import { renderTeacherDashboard, attachTeacherDashboardEvents } from './pages/TeacherDashboard.js';
-import { renderTeacherProfile, attachTeacherProfileEvents } from './pages/TeacherProfile.js';
-import { renderAttendancePage, attachAttendanceEvents } from './pages/AttendancePage.js';
-import { renderGradesPage, attachGradesEvents } from './pages/GradesPage.js';
-import { renderSchedulePage, attachScheduleEvents } from './pages/SchedulePage.js';
-import { renderAnnouncementsPage, attachAnnouncementsEvents } from './pages/AnnouncementsPage.js';
-import { renderSyncStatusPage, attachSyncStatusEvents } from './pages/SyncStatusPage.js';
-import { renderAuditLogPage, attachAuditLogEvents } from './pages/AuditLogPage.js';
+import { renderDashboardPage } from './pages/DashboardPage.js';
+import { renderStudentsPage, attachStudentsEvents } from './pages/StudentsPage.js';
+import { renderAttendanceDailyPage, attachAttendanceDailyEvents } from './pages/AttendanceDailyPage.js';
+import { renderAttendanceRecapPage, attachAttendanceRecapEvents } from './pages/AttendanceRecapPage.js';
+import { renderGradesInputPage, attachGradesInputEvents } from './pages/GradesInputPage.js';
+import { renderGradesRecapPage, attachGradesRecapEvents } from './pages/GradesRecapPage.js';
+import { renderReportsPage, attachReportsEvents } from './pages/ReportsPage.js';
+import { renderSyncPage, attachSyncEvents } from './pages/SyncPage.js';
+import { renderUsersPage, attachUsersEvents } from './pages/UsersPage.js';
 import { renderSettingsPage, attachSettingsEvents } from './pages/SettingsPage.js';
 
-export async function navigateTo(hash = window.location.hash || '#student') {
+export async function navigateTo(hash = window.location.hash || '#dashboard') {
   const appContainer = document.getElementById('app');
   if (!appContainer) return;
 
   const user = getCurrentUser();
-  const cleanHash = hash.split('?')[0];
+  const cleanHash = hash.split('?')[0] || '#dashboard';
 
-  // ============================================================================
-  // ROUTE ACCESS GUARDS
-  // ============================================================================
-
-  // Halaman Publik Siswa
-  if (cleanHash === '#student' || cleanHash === '' || cleanHash === '#') {
-    appContainer.innerHTML = await renderStudentPublicPage(null);
-    attachStudentPublicEvents(null);
-    return;
-  }
-  if (cleanHash === '#student-kelas_1') {
-    appContainer.innerHTML = await renderStudentPublicPage('kelas_1');
-    attachStudentPublicEvents('kelas_1');
-    return;
-  }
-  if (cleanHash === '#student-kelas_6') {
-    appContainer.innerHTML = await renderStudentPublicPage('kelas_6');
-    attachStudentPublicEvents('kelas_6');
-    return;
-  }
-
-  // Halaman Login
-  if (cleanHash === '#login') {
-    if (user) {
-      // Jika sudah login, alihkan ke dashboard masing-masing
-      window.location.hash = isAdmin(user) ? '#admin-dashboard' : '#teacher-dashboard';
+  // 1. Jika belum login, hanya boleh akses `#login`
+  if (!user) {
+    if (cleanHash !== '#login') {
+      window.location.hash = '#login';
       return;
     }
     appContainer.innerHTML = renderLoginPage();
@@ -65,111 +42,88 @@ export async function navigateTo(hash = window.location.hash || '#student') {
     return;
   }
 
-  // Rute Terproteksi: Memerlukan Autentikasi
-  if (!user) {
-    toast.warning("Silakan masuk terlebih dahulu untuk mengakses menu staf.");
-    window.location.hash = '#login';
+  // 2. Jika sudah login tetapi membuka `#login`, arahkan ke `#dashboard`
+  if (cleanHash === '#login' || cleanHash === '') {
+    window.location.hash = '#dashboard';
     return;
   }
 
-  // Pengalihan Umum `#dashboard`
-  if (cleanHash === '#dashboard') {
-    window.location.hash = isAdmin(user) ? '#admin-dashboard' : '#teacher-dashboard';
-    return;
-  }
-
-  // Proteksi Menu Khusus Admin
-  const adminOnlyRoutes = ['#admin-dashboard', '#sync', '#logs', '#settings', '#teachers', '#classes', '#accounts', '#documents'];
+  // 3. Proteksi Akses Berdasarkan Role
+  const adminOnlyRoutes = ['#sync', '#users', '#settings'];
   if (adminOnlyRoutes.includes(cleanHash) && !isAdmin(user)) {
-    toast.error("Akses Ditolak: Anda tidak memiliki izin administratif.");
-    window.location.hash = '#teacher-dashboard';
+    toast.error("Akses Ditolak: Fitur ini hanya dapat diakses oleh Administrator.");
+    window.location.hash = '#dashboard';
     return;
   }
 
-  // ============================================================================
-  // RENDER APPS SHELL (SIDEBAR + TOPBAR + PAGE CONTENT)
-  // ============================================================================
+  // Kepala Sekolah tidak boleh mengakses formulir tulis langsung (input)
+  if (isHeadmaster(user) && (cleanHash === '#attendance' || cleanHash === '#grades-input')) {
+    toast.warning("Kepala Sekolah memiliki hak akses monitoring & laporan.");
+    window.location.hash = cleanHash === '#attendance' ? '#attendance-recap' : '#grades-recap';
+    return;
+  }
+
+  // 4. Render Halaman Sesuai Route
   let pageTitle = "Dashboard";
   let contentHtml = "";
   let attachEvents = () => {};
 
   switch (cleanHash) {
-    case '#admin-dashboard':
-      pageTitle = "Dashboard Administrator";
-      contentHtml = await renderAdminDashboard();
-      attachEvents = attachAdminDashboardEvents;
-      break;
-
-    case '#teacher-dashboard':
-      pageTitle = `Dashboard ${user.kelas_id === 'kelas_1' ? 'Kelas 1' : 'Kelas 6'}`;
-      contentHtml = await renderTeacherDashboard();
-      attachEvents = attachTeacherDashboardEvents;
+    case '#dashboard':
+      pageTitle = "Dashboard Sistem";
+      contentHtml = await renderDashboardPage();
       break;
 
     case '#students':
-      if (isAdmin(user)) {
-        // Admin melihat dashboard data siswa menyeluruh
-        pageTitle = "Pengelolaan Siswa (Kelas 1 & Kelas 6)";
-        contentHtml = await renderTeacherDashboard(); // Reusable student table engine
-        attachEvents = attachTeacherDashboardEvents;
-      } else {
-        pageTitle = `Data Siswa ${user.kelas_id === 'kelas_1' ? 'Kelas 1' : 'Kelas 6'}`;
-        contentHtml = await renderTeacherDashboard();
-        attachEvents = attachTeacherDashboardEvents;
-      }
-      break;
-
-    case '#profile':
-      pageTitle = "Profil Guru & Ganti Foto";
-      contentHtml = await renderTeacherProfile();
-      attachEvents = attachTeacherProfileEvents;
+      pageTitle = "Data Induk Siswa (Kelas 1–6)";
+      contentHtml = await renderStudentsPage();
+      attachEvents = attachStudentsEvents;
       break;
 
     case '#attendance':
-      pageTitle = "Presensi & Kehadiran Siswa";
-      contentHtml = await renderAttendancePage();
-      attachEvents = attachAttendanceEvents;
+      pageTitle = "Absensi Harian Siswa";
+      contentHtml = await renderAttendanceDailyPage();
+      attachEvents = attachAttendanceDailyEvents;
       break;
 
-    case '#grades':
-      pageTitle = "Penilaian Siswa Kurikulum Merdeka";
-      contentHtml = await renderGradesPage();
-      attachEvents = attachGradesEvents;
+    case '#attendance-recap':
+      pageTitle = "Rekapitulasi Kehadiran Siswa";
+      contentHtml = await renderAttendanceRecapPage();
+      attachEvents = attachAttendanceRecapEvents;
       break;
 
-    case '#schedule':
-      pageTitle = "Jadwal Pelajaran Sekolah";
-      contentHtml = await renderSchedulePage();
-      attachEvents = attachScheduleEvents;
+    case '#grades-input':
+      pageTitle = "Input Nilai Siswa";
+      contentHtml = await renderGradesInputPage();
+      attachEvents = attachGradesInputEvents;
       break;
 
-    case '#announcements':
-      pageTitle = "Pengumuman Sekolah & Kelas";
-      contentHtml = await renderAnnouncementsPage();
-      attachEvents = attachAnnouncementsEvents;
+    case '#grades-recap':
+      pageTitle = "Rekapitulasi Nilai Siswa";
+      contentHtml = await renderGradesRecapPage();
+      attachEvents = attachGradesRecapEvents;
       break;
 
     case '#reports':
-      pageTitle = "Cetak Laporan Akademik";
-      // Defaults to attendance with print buttons
-      contentHtml = await renderAttendancePage();
-      attachEvents = attachAttendanceEvents;
+      pageTitle = "Pusat Cetak Laporan Resmi";
+      contentHtml = await renderReportsPage();
+      attachEvents = attachReportsEvents;
       break;
 
     case '#sync':
-      pageTitle = "Status Sinkronisasi Database";
-      contentHtml = await renderSyncStatusPage();
-      attachEvents = attachSyncStatusEvents;
+      pageTitle = "Panel Sinkronisasi Data";
+      contentHtml = await renderSyncPage();
+      attachEvents = attachSyncEvents;
       break;
 
-    case '#logs':
-      pageTitle = "Log Audit Aktivitas Sistem";
-      contentHtml = await renderAuditLogPage();
-      attachEvents = attachAuditLogEvents;
+    case '#users':
+      pageTitle = "Pengguna & Hak Akses";
+      contentHtml = await renderUsersPage();
+      attachEvents = attachUsersEvents;
       break;
 
     case '#settings':
-      pageTitle = "Pengaturan Identitas Sekolah";
+      pageTitle = "Pengaturan Kurikulum & Sekolah";
       contentHtml = await renderSettingsPage();
       attachEvents = attachSettingsEvents;
       break;
@@ -180,7 +134,7 @@ export async function navigateTo(hash = window.location.hash || '#student') {
         <div class="page-content">
           <div class="card" style="text-align: center; padding: 3rem;">
             <h2>404 - Halaman Tidak Ditemukan</h2>
-            <p style="color: #64748b; margin: 1rem 0;">Halaman dengan tautan <code>${cleanHash}</code> tidak ditemukan.</p>
+            <p style="color: #64748b; margin: 1rem 0;">Tautan <code>${cleanHash}</code> tidak dikenali sistem.</p>
             <a href="#dashboard" class="btn btn-primary">Kembali ke Dashboard</a>
           </div>
         </div>
@@ -191,12 +145,11 @@ export async function navigateTo(hash = window.location.hash || '#student') {
   // Demo Banner Notice jika akun demonstrasi aktif
   const demoBannerHtml = user?.is_demo ? `
     <div class="demo-banner no-print">
-      <span>⚠️ <strong>Mode Demonstrasi:</strong> Akun pengujian (${user.email}) aktif. Semua perubahan tersimpan interaktif di database lokal & terisolasi.</span>
-      <span style="font-size: 0.75rem; background: rgba(0,0,0,0.08); padding: 2px 8px; border-radius: 4px;">DEMO VERIFIED</span>
+      <span>🧪 <strong>Mode Pengujian / Demo:</strong> Menggunakan akun (${user.email} - ${user.displayName}). Perubahan tersimpan secara interaktif.</span>
+      <span style="font-size: 0.72rem; background: rgba(0,0,0,0.08); padding: 2px 8px; border-radius: 4px;">DEMO ACTIVE</span>
     </div>
   ` : '';
 
-  // Render Full Protected App Layout
   appContainer.innerHTML = `
     <div class="app-container">
       ${renderSidebar(cleanHash)}
@@ -208,7 +161,6 @@ export async function navigateTo(hash = window.location.hash || '#student') {
     </div>
   `;
 
-  // Attach navbar & page-specific event handlers
   attachNavbarEvents();
   attachEvents();
 }

@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // Helper Functions
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -18,15 +18,22 @@ service cloud.firestore {
       );
     }
 
+    function isHeadmaster() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'kepala_sekolah' ||
+        getUserData().role == 'kepala_sekolah'
+      );
+    }
+
     function isTeacher() {
       return isAuthenticated() && (
         request.auth.token.role == 'guru' ||
-        getUserData().role in ['guru', 'guru_kelas_1', 'guru_kelas_6']
+        getUserData().role == 'guru'
       );
     }
 
     function getTeacherClass() {
-      return getUserData().kelas_id;
+      return getUserData().kelas_ditugaskan;
     }
 
     function isTeacherForClass(kelasId) {
@@ -34,138 +41,51 @@ service cloud.firestore {
     }
 
     // --- USERS COLLECTION ---
-    // Anyone authenticated can read basic user profile; users can only update their own non-sensitive fields
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin();
-      allow update: if isAdmin() || (
-        isAuthenticated() && request.auth.uid == userId &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'kelas_id', 'status_akun', 'auth_uid'])
-      );
-      allow delete: if isAdmin();
-    }
-
-    // --- CLASSES COLLECTION ---
-    // Only kelas_1 and kelas_6 exist. Public can read class summary. Only admin can modify.
-    match /classes/{classId} {
-      allow read: if true;
       allow write: if isAdmin();
     }
 
-    // --- TEACHERS COLLECTION ---
-    // Public can read basic teacher profile (nama, foto_url, kelas_id).
-    // Teachers can update their own phone and photo only.
-    match /teachers/{teacherId} {
-      allow read: if true;
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin() || (
-        isAuthenticated() && resource.data.auth_uid == request.auth.uid &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'kelas_id', 'teacher_id', 'status_aktif', 'auth_uid'])
-      );
-    }
-
-    // --- STUDENTS COLLECTION ---
-    // Public cannot list student personal details.
-    // Teachers can only view/add/update students in their assigned class (kelas_1 or kelas_6).
-    // Deletion: Permanent delete is disallowed; only status_aktif='nonaktif' soft-update is allowed.
+    // --- STUDENTS COLLECTION (Data Induk Siswa Kelas 1–6) ---
+    // Diisi melalui sinkronisasi Google Sheets -> Firestore. Website read-only.
     match /students/{studentId} {
-      allow read: if isAdmin() || (
-        isAuthenticated() && isTeacherForClass(resource.data.kelas_id)
-      ) || (
-        // A student can read their own verified record
-        isAuthenticated() && getUserData().student_id == studentId
-      );
-
-      allow create: if isAdmin() || (
-        isAuthenticated() && isTeacherForClass(request.resource.data.kelas_id) &&
-        request.resource.data.status_aktif == 'aktif'
-      );
-
-      allow update: if isAdmin() || (
-        isAuthenticated() && isTeacherForClass(resource.data.kelas_id) &&
-        // Teacher cannot transfer student across classes
-        request.resource.data.kelas_id == resource.data.kelas_id
-      );
-
-      // Disallow hard deletes: soft-deactivation only
-      allow delete: if isAdmin();
+      allow read: if isAuthenticated();
+      allow write: if isAdmin(); // Hanya Admin / Backend sync
     }
 
-    // --- ATTENDANCE COLLECTION ---
-    // Teachers can manage attendance only for their assigned class.
+    // --- ATTENDANCE COLLECTION (Absensi Harian) ---
     match /attendance/{attendanceId} {
-      allow read: if isAdmin() || (
-        isAuthenticated() && (
-          isTeacherForClass(resource.data.kelas_id) ||
-          getUserData().student_id == resource.data.student_id
-        )
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() || (
+        isTeacherForClass(request.resource.data.Kelas)
       );
-
-      allow create: if isAdmin() || (
-        isAuthenticated() && isTeacherForClass(request.resource.data.kelas_id)
-      );
-
-      allow update: if isAdmin() || (
-        isAuthenticated() && isTeacherForClass(resource.data.kelas_id)
-      );
-
       allow delete: if isAdmin();
     }
 
-    // --- GRADES COLLECTION ---
-    // Teachers can manage grades only for their assigned class.
-    // Students can only view their own grades IF status_publikasi == 'dipublikasikan'.
+    // --- GRADES COLLECTION (Nilai Siswa) ---
     match /grades/{gradeId} {
-      allow read: if isAdmin() || (
-        isAuthenticated() && isTeacherForClass(resource.data.kelas_id)
-      ) || (
-        isAuthenticated() && 
-        getUserData().student_id == resource.data.student_id &&
-        resource.data.status_publikasi == 'dipublikasikan'
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() || (
+        isTeacherForClass(request.resource.data.Kelas)
       );
-
-      allow create: if isAdmin() || (
-        isAuthenticated() && isTeacherForClass(request.resource.data.kelas_id)
-      );
-
-      allow update: if isAdmin() || (
-        isAuthenticated() && isTeacherForClass(resource.data.kelas_id)
-      );
-
       allow delete: if isAdmin();
     }
 
-    // --- SCHEDULES COLLECTION ---
-    // Anyone can read class schedules. Only admin can modify.
-    match /schedules/{scheduleId} {
-      allow read: if true;
+    // --- SETTINGS COLLECTION ---
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
       allow write: if isAdmin();
-    }
-
-    // --- ANNOUNCEMENTS COLLECTION ---
-    // Published announcements can be read by public/students. Admin and teachers can create/manage.
-    match /announcements/{announcementId} {
-      allow read: if resource.data.status_publikasi == 'dipublikasikan' || isAuthenticated();
-      allow create, update: if isAdmin() || isTeacher();
-      allow delete: if isAdmin();
     }
 
     // --- SYNC JOBS & AUDIT LOGS ---
-    // Protected administrative collections
     match /syncJobs/{jobId} {
       allow read, write: if isAdmin();
     }
 
     match /auditLogs/{logId} {
-      allow read: if isAdmin();
+      allow read: if isAdmin() || isHeadmaster();
       allow create: if isAuthenticated();
       allow update, delete: if false; // Append-only audit trail
-    }
-
-    // --- SYSTEM SETTINGS ---
-    match /settings/{settingId} {
-      allow read: if true;
-      allow write: if isAdmin();
     }
   }
 }

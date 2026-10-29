@@ -1,128 +1,114 @@
 /**
  * ==============================================================================
- * SISTEM INFORMASI ABSENSI DAN PENILAIAN SISWA SD
+ * SISTEM ABSENSI DAN NILAI SISWA SD KELAS 1–6
  * SIDEBAR NAVIGATION COMPONENT (src/components/Sidebar.js)
  * ==============================================================================
  */
 
 import { getCurrentUser } from '../auth.js';
-import { isAdmin, isTeacher, getRoleBadge } from '../permissions.js';
+import { isAdmin, isHeadmaster, isTeacher, getRoleBadge, CLASS_LABELS } from '../permissions.js';
 
-export function renderSidebar(currentRoute = '') {
+export function renderSidebar(currentRoute = '#dashboard') {
   const user = getCurrentUser();
-  if (!user) return ''; // Tidak tampilkan sidebar untuk siswa/publik
+  if (!user) return '';
 
-  const roleBadge = getRoleBadge(user.role);
+  const roleBadge = getRoleBadge(user);
   const userIsAdmin = isAdmin(user);
-  const teacherClass = user.kelas_id === 'kelas_1' ? 'Kelas 1' : 'Kelas 6';
+  const userIsKepsek = isHeadmaster(user);
+  const userIsGuru = isTeacher(user);
 
-  let navItems = '';
+  let navLinks = '';
 
-  if (userIsAdmin) {
-    // Menu Lengkap Administrator (14 Menu)
-    navItems = `
-      <div class="sidebar-nav-label">Utama</div>
-      <a href="#admin-dashboard" class="sidebar-nav-link ${currentRoute === '#admin-dashboard' || currentRoute === '' ? 'active' : ''}">
-        <span>📊</span> <span>Dashboard</span>
-      </a>
-      <a href="#students" class="sidebar-nav-link ${currentRoute === '#students' ? 'active' : ''}">
-        <span>👥</span> <span>Data Siswa (K1 & K6)</span>
-      </a>
-      <a href="#teachers" class="sidebar-nav-link ${currentRoute === '#teachers' ? 'active' : ''}">
-        <span>👨‍🏫</span> <span>Data Guru</span>
-      </a>
-      <a href="#classes" class="sidebar-nav-link ${currentRoute === '#classes' ? 'active' : ''}">
-        <span>🏫</span> <span>Data Kelas</span>
-      </a>
+  // 1. Dashboard (Semua role)
+  navLinks += `
+    <a href="#dashboard" class="sidebar-nav-link ${currentRoute === '#dashboard' || currentRoute === '' ? 'active' : ''}">
+      <span>📊</span> <span>Dashboard</span>
+    </a>
+  `;
 
-      <div class="sidebar-nav-label">Akademik</div>
+  // 2. Data Siswa (Semua role - Read-only di website)
+  navLinks += `
+    <a href="#students" class="sidebar-nav-link ${currentRoute === '#students' ? 'active' : ''}">
+      <span>👥</span> <span>Data Siswa ${userIsGuru ? `(${CLASS_LABELS[user.kelas_id]})` : '(K1–K6)'}</span>
+    </a>
+  `;
+
+  // 3 & 4. Absensi Harian & Rekap Absensi
+  if (userIsAdmin || userIsGuru) {
+    navLinks += `
+      <div class="sidebar-nav-label">Presensi</div>
       <a href="#attendance" class="sidebar-nav-link ${currentRoute === '#attendance' ? 'active' : ''}">
-        <span>📅</span> <span>Absensi Siswa</span>
+        <span>📅</span> <span>Absensi Harian</span>
       </a>
-      <a href="#grades" class="sidebar-nav-link ${currentRoute === '#grades' ? 'active' : ''}">
-        <span>📝</span> <span>Penilaian Siswa</span>
+      <a href="#attendance-recap" class="sidebar-nav-link ${currentRoute === '#attendance-recap' ? 'active' : ''}">
+        <span>📈</span> <span>Rekap Absensi</span>
       </a>
-      <a href="#schedule" class="sidebar-nav-link ${currentRoute === '#schedule' ? 'active' : ''}">
-        <span>⏱️</span> <span>Jadwal Pelajaran</span>
+    `;
+  } else if (userIsKepsek) {
+    navLinks += `
+      <div class="sidebar-nav-label">Presensi</div>
+      <a href="#attendance-recap" class="sidebar-nav-link ${currentRoute === '#attendance-recap' ? 'active' : ''}">
+        <span>📈</span> <span>Rekap Absensi K1–K6</span>
       </a>
-      <a href="#announcements" class="sidebar-nav-link ${currentRoute === '#announcements' ? 'active' : ''}">
-        <span>📢</span> <span>Pengumuman</span>
-      </a>
-      <a href="#reports" class="sidebar-nav-link ${currentRoute === '#reports' ? 'active' : ''}">
-        <span>🖨️</span> <span>Cetak Laporan</span>
-      </a>
+    `;
+  }
 
-      <div class="sidebar-nav-label">Sistem & Sinkronisasi</div>
-      <a href="#documents" class="sidebar-nav-link ${currentRoute === '#documents' ? 'active' : ''}">
-        <span>📁</span> <span>Foto & Dokumen Drive</span>
+  // 5 & 6. Input Nilai & Rekap Nilai
+  if (userIsAdmin || userIsGuru) {
+    navLinks += `
+      <div class="sidebar-nav-label">Penilaian</div>
+      <a href="#grades-input" class="sidebar-nav-link ${currentRoute === '#grades-input' ? 'active' : ''}">
+        <span>✏️</span> <span>Input Nilai</span>
       </a>
-      <a href="#accounts" class="sidebar-nav-link ${currentRoute === '#accounts' ? 'active' : ''}">
-        <span>🔐</span> <span>Akun Pengguna</span>
+      <a href="#grades-recap" class="sidebar-nav-link ${currentRoute === '#grades-recap' ? 'active' : ''}">
+        <span>📝</span> <span>Rekap Nilai Siswa</span>
       </a>
+    `;
+  } else if (userIsKepsek) {
+    navLinks += `
+      <div class="sidebar-nav-label">Penilaian</div>
+      <a href="#grades-recap" class="sidebar-nav-link ${currentRoute === '#grades-recap' ? 'active' : ''}">
+        <span>📝</span> <span>Rekap Nilai K1–K6</span>
+      </a>
+    `;
+  }
+
+  // 7. Cetak Laporan (Semua role)
+  navLinks += `
+    <div class="sidebar-nav-label">Pelaporan Resmi</div>
+    <a href="#reports" class="sidebar-nav-link ${currentRoute === '#reports' ? 'active' : ''}">
+      <span>🖨️</span> <span>Cetak Laporan</span>
+    </a>
+  `;
+
+  // 8, 9, 10. Menu Khusus Administrator
+  if (userIsAdmin) {
+    navLinks += `
+      <div class="sidebar-nav-label">Administrasi Sistem</div>
       <a href="#sync" class="sidebar-nav-link ${currentRoute === '#sync' ? 'active' : ''}">
         <span>🔄</span> <span>Sinkronisasi Data</span>
       </a>
-      <a href="#logs" class="sidebar-nav-link ${currentRoute === '#logs' ? 'active' : ''}">
-        <span>📜</span> <span>Log Aktivitas</span>
+      <a href="#users" class="sidebar-nav-link ${currentRoute === '#users' ? 'active' : ''}">
+        <span>🔐</span> <span>Pengguna & Hak Akses</span>
       </a>
       <a href="#settings" class="sidebar-nav-link ${currentRoute === '#settings' ? 'active' : ''}">
         <span>⚙️</span> <span>Pengaturan Sistem</span>
       </a>
     `;
-  } else if (isTeacher(user)) {
-    // Menu Terisolasi Khusus Guru (Hanya Kelas Yang Ditugaskan)
-    navItems = `
-      <div class="sidebar-nav-label">Kelas Saya (${teacherClass})</div>
-      <a href="#teacher-dashboard" class="sidebar-nav-link ${currentRoute === '#teacher-dashboard' || currentRoute === '' ? 'active' : ''}">
-        <span>📊</span> <span>Dashboard ${teacherClass}</span>
-      </a>
-      <a href="#students" class="sidebar-nav-link ${currentRoute === '#students' ? 'active' : ''}">
-        <span>👥</span> <span>Siswa ${teacherClass}</span>
-      </a>
-      <a href="#attendance" class="sidebar-nav-link ${currentRoute === '#attendance' ? 'active' : ''}">
-        <span>📅</span> <span>Absensi ${teacherClass}</span>
-      </a>
-      <a href="#grades" class="sidebar-nav-link ${currentRoute === '#grades' ? 'active' : ''}">
-        <span>📝</span> <span>Nilai Siswa</span>
-      </a>
-      <a href="#schedule" class="sidebar-nav-link ${currentRoute === '#schedule' ? 'active' : ''}">
-        <span>⏱️</span> <span>Jadwal ${teacherClass}</span>
-      </a>
-      <a href="#announcements" class="sidebar-nav-link ${currentRoute === '#announcements' ? 'active' : ''}">
-        <span>📢</span> <span>Pengumuman</span>
-      </a>
-      <a href="#reports" class="sidebar-nav-link ${currentRoute === '#reports' ? 'active' : ''}">
-        <span>🖨️</span> <span>Cetak Laporan</span>
-      </a>
-
-      <div class="sidebar-nav-label">Akun Saya</div>
-      <a href="#profile" class="sidebar-nav-link ${currentRoute === '#profile' ? 'active' : ''}">
-        <span>👤</span> <span>Profil & Ganti Foto</span>
-      </a>
-    `;
   }
-
-  // Tautan Kembali ke Tampilan Siswa
-  navItems += `
-    <div style="margin-top: auto; padding-top: 1rem;">
-      <a href="#student" class="sidebar-nav-link" style="color: var(--primary-400); background: rgba(2, 132, 199, 0.15);">
-        <span>🎒</span> <span>Lihat Halaman Siswa</span>
-      </a>
-    </div>
-  `;
 
   return `
     <aside class="sidebar no-print">
       <div class="sidebar-header">
         <div class="sidebar-brand-icon">SD</div>
         <div>
-          <div class="sidebar-brand-title">SI Absen & Nilai</div>
-          <div class="sidebar-brand-sub">SD Harapan Bangsa</div>
+          <div class="sidebar-brand-title">SI Absen &amp; Nilai</div>
+          <div class="sidebar-brand-sub">Kelas 1 – 6 Terpadu</div>
         </div>
       </div>
 
       <nav class="sidebar-nav">
-        ${navItems}
+        ${navLinks}
       </nav>
 
       <div class="sidebar-user">
@@ -131,7 +117,11 @@ export function renderSidebar(currentRoute = '') {
         </div>
         <div class="sidebar-user-info">
           <div class="sidebar-user-name">${user.displayName}</div>
-          <div class="sidebar-user-role">${roleBadge.label}</div>
+          <div class="sidebar-user-role">
+            <span class="badge ${roleBadge.class}" style="font-size: 0.68rem; padding: 1px 6px;">
+              ${roleBadge.label}
+            </span>
+          </div>
         </div>
       </div>
     </aside>
