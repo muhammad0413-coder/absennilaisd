@@ -7,8 +7,8 @@
 
 import { getCurrentUser } from '../auth.js';
 import { isAdmin, isHeadmaster, isTeacher, CLASS_LABELS } from '../permissions.js';
-import { calculateAttendanceRecap } from '../services.js';
-import { triggerPrintReport, exportToCSV } from '../components/ReportPrint.js';
+import { calculateAttendanceRecap, getStudents, getAttendance, getSettings } from '../services.js';
+import { triggerPrintReport, triggerPrintAuthenticLandscape, generateAttendanceMonthSheetHtml, exportToCSV } from '../components/ReportPrint.js';
 import { toast } from '../components/Toast.js';
 
 export async function renderAttendanceRecapPage() {
@@ -85,27 +85,20 @@ export async function renderAttendanceRecapPage() {
         </div>
       </div>
 
-      <!-- Tabel Rekapitulasi -->
+      <!-- Lembar Daftar Hadir Bulanan Autentik (Format Resmi Gambar 1: Tanggal 1-31) -->
       <div class="card">
-        <div class="table-responsive">
-          <table class="table" id="table-recap-attendance">
-            <thead>
-              <tr>
-                <th style="width: 45px;">No</th>
-                <th style="width: 85px;">NIS</th>
-                <th>Nama Siswa</th>
-                <th style="text-align: center; color: #10b981;">Hadir (H)</th>
-                <th style="text-align: center; color: #0284c7;">Sakit (S)</th>
-                <th style="text-align: center; color: #f59e0b;">Izin (I)</th>
-                <th style="text-align: center; color: #ef4444;">Alpa (A)</th>
-                <th style="text-align: center;">Total Hari</th>
-                <th style="text-align: center;">% Kehadiran</th>
-              </tr>
-            </thead>
-            <tbody id="recap-attendance-tbody">
-              <!-- Rendered via JS -->
-            </tbody>
-          </table>
+        <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <h3 class="card-title">📋 Format Resmi Daftar Hadir Bulanan (Gambar 1)</h3>
+            <span style="font-size: 0.78rem; color: #64748b;">Layout kolom Tanggal 1–31, S, I, A, Jumlah, &amp; Tanda Tangan Resmi</span>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-print-authentic-att">
+            🖨️ Cetak Lembar Hadir 1–31 (PDF)
+          </button>
+        </div>
+
+        <div class="table-responsive" id="container-authentic-att-sheet" style="background: #ffffff; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+          <!-- Rendered via JS -->
         </div>
       </div>
     </div>
@@ -125,107 +118,60 @@ export function attachAttendanceRecapEvents() {
   const btnExport = document.getElementById('btn-export-recap-csv');
 
   let currentRecapData = null;
+  let currentAuthenticHtml = "";
 
   const loadData = async () => {
     const activeClass = userIsGuru ? user.kelas_id : selectClass.value;
-    const bulan = inputMonth.value || null;
-    const startDate = inputStart.value || null;
-    const endDate = inputEnd.value || null;
+    const bulan = inputMonth ? inputMonth.value : null;
+    const startDate = inputStart ? inputStart.value : null;
+    const endDate = inputEnd ? inputEnd.value : null;
 
     currentRecapData = await calculateAttendanceRecap(activeClass, startDate, endDate, bulan);
 
-    document.getElementById('val-total-hari-tercatat').textContent = `${currentRecapData.totalHariTercatat} Hari`;
+    const valEl = document.getElementById('val-total-hari-tercatat');
+    if (valEl) valEl.textContent = `${currentRecapData.totalHariTercatat} Hari`;
 
-    const tbody = document.getElementById('recap-attendance-tbody');
-    if (!tbody) return;
+    // Render Lembar Autentik Format Gambar 1 (Tanggal 1-31)
+    const students = await getStudents(activeClass, 'Aktif');
+    const allAttendance = await getAttendance(activeClass, null, bulan);
+    const settings = await getSettings();
+    const classLabel = CLASS_LABELS[activeClass] || 'Kelas';
 
-    if (currentRecapData.recap.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="9" style="text-align: center; padding: 2rem; color: #64748b;">
-            Belum ada data presensi yang tercatat untuk filter ini.
-          </td>
-        </tr>
-      `;
-      return;
+    const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    let monthLabel = "Bulan Ini";
+    if (bulan) {
+      const [y, m] = bulan.split('-');
+      monthLabel = `${monthNames[parseInt(m, 10) - 1]} ${y}`;
+    } else {
+      const now = new Date();
+      monthLabel = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
     }
 
-    tbody.innerHTML = currentRecapData.recap.map((r, idx) => `
-      <tr>
-        <td style="text-align: center;">${idx + 1}</td>
-        <td><strong>${r.student.NIS}</strong></td>
-        <td>
-          <div style="font-weight: 600; color: #0f172a;">${r.student.Nama_Lengkap}</div>
-        </td>
-        <td style="text-align: center; font-weight: bold; color: #10b981;">${r.hadir}</td>
-        <td style="text-align: center; font-weight: bold; color: #0284c7;">${r.sakit}</td>
-        <td style="text-align: center; font-weight: bold; color: #f59e0b;">${r.izin}</td>
-        <td style="text-align: center; font-weight: bold; color: #ef4444;">${r.alpa}</td>
-        <td style="text-align: center;">${r.totalHari}</td>
-        <td style="text-align: center;">
-          <span class="badge ${parseInt(r.persentase) >= 80 ? 'badge-success' : 'badge-warning'}" style="font-size: 0.85rem;">
-            ${r.persentase}
-          </span>
-        </td>
-      </tr>
-    `).join('');
+    currentAuthenticHtml = generateAttendanceMonthSheetHtml(students, allAttendance, monthLabel, settings, classLabel, user.displayName || user.email);
+
+    const containerAuthentic = document.getElementById('container-authentic-att-sheet');
+    if (containerAuthentic) {
+      containerAuthentic.innerHTML = currentAuthenticHtml;
+    }
   };
 
   if (btnApply) btnApply.onclick = loadData;
   if (selectClass) selectClass.onchange = loadData;
+  if (inputMonth) inputMonth.onchange = loadData;
 
-  // Cetak Rekap Resmi
-  if (btnPrint) {
-    btnPrint.onclick = async () => {
-      if (!currentRecapData || currentRecapData.recap.length === 0) {
-        toast.warning("Tidak ada data rekap untuk dicetak.");
-        return;
-      }
+  // Cetak Format Resmi Gambar 1
+  const doPrint = () => {
+    if (!currentAuthenticHtml) {
+      toast.warning("Menyiapkan dokumen...");
+      loadData().then(() => triggerPrintAuthenticLandscape(currentAuthenticHtml));
+      return;
+    }
+    triggerPrintAuthenticLandscape(currentAuthenticHtml);
+  };
 
-      const activeClass = userIsGuru ? user.kelas_id : selectClass.value;
-      const classLabel = CLASS_LABELS[activeClass] || 'Kelas';
-
-      const rowsHtml = currentRecapData.recap.map((r, idx) => `
-        <tr>
-          <td style="text-align: center;">${idx + 1}</td>
-          <td style="text-align: center;">${r.student.NIS}</td>
-          <td>${r.student.Nama_Lengkap}</td>
-          <td style="text-align: center;">${r.hadir}</td>
-          <td style="text-align: center;">${r.sakit}</td>
-          <td style="text-align: center;">${r.izin}</td>
-          <td style="text-align: center;">${r.alpa}</td>
-          <td style="text-align: center;">${r.totalHari}</td>
-          <td style="text-align: center; font-weight: bold;">${r.persentase}</td>
-        </tr>
-      `).join('');
-
-      const html = `
-        <div style="margin-bottom: 12px; font-size: 9pt;">
-          <strong>Total Hari Pertemuan Efektif:</strong> ${currentRecapData.totalHariTercatat} Hari
-        </div>
-        <table class="table" style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr>
-              <th style="width: 35px;">No</th>
-              <th style="width: 75px;">NIS</th>
-              <th>Nama Siswa</th>
-              <th style="width: 45px;">H</th>
-              <th style="width: 45px;">S</th>
-              <th style="width: 45px;">I</th>
-              <th style="width: 45px;">A</th>
-              <th style="width: 65px;">Total Hari</th>
-              <th style="width: 75px;">% Hadir</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
-        </table>
-      `;
-
-      await triggerPrintReport("Rekapitulasi Kehadiran Siswa", classLabel, html);
-    };
-  }
+  if (btnPrint) btnPrint.onclick = doPrint;
+  const btnPrintAuthentic = document.getElementById('btn-print-authentic-att');
+  if (btnPrintAuthentic) btnPrintAuthentic.onclick = doPrint;
 
   // Ekspor CSV
   if (btnExport) {

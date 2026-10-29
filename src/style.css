@@ -790,6 +790,36 @@ html, body {
     margin-bottom: 20px;
   }
 
+  /* Authentic School Tables (Daftar Hadir 1-31 & Nilai Kurikulum Merdeka) */
+  .authentic-school-sheet {
+    font-family: 'Times New Roman', Times, serif !important;
+    color: #000 !important;
+  }
+
+  .authentic-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 8.5pt !important;
+    color: #000 !important;
+  }
+
+  .authentic-table th, .authentic-table td {
+    border: 1px solid #000 !important;
+    padding: 3px 2px !important;
+    text-align: center;
+  }
+
+  .authentic-table th {
+    background-color: #f2f2f2 !important;
+    font-weight: bold !important;
+  }
+
+  .authentic-table td.text-left {
+    text-align: left !important;
+    padding-left: 6px !important;
+  }
+
   .print-kop-surat h2 {
     font-size: 16pt;
     font-weight: bold;

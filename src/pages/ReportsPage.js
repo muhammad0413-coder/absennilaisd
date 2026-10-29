@@ -8,7 +8,7 @@
 import { getCurrentUser } from '../auth.js';
 import { isAdmin, isHeadmaster, isTeacher, CLASS_LABELS } from '../permissions.js';
 import { getStudents, getAttendance, getGrades, calculateAttendanceRecap, calculateGradesRecap, getSettings } from '../services.js';
-import { triggerPrintReport, exportToCSV } from '../components/ReportPrint.js';
+import { triggerPrintReport, triggerPrintAuthenticLandscape, generateAttendanceMonthSheetHtml, generateGradesSemesterSheetHtml, exportToCSV } from '../components/ReportPrint.js';
 import { toast } from '../components/Toast.js';
 
 export async function renderReportsPage() {
@@ -246,7 +246,12 @@ export function attachReportsEvents() {
         </table>
       `;
       await triggerPrintReport("Lembar Presensi Harian", classLabel, html);
-    } else if (type === 'rekap-absensi-bulanan' || type === 'rekap-absensi-semester') {
+    } else if (type === 'rekap-absensi-bulanan') {
+      // Format Resmi Autentik Gambar 1: Daftar Hadir Tanggal 1-31
+      const allAttendance = await getAttendance(activeClass);
+      const sheetHtml = generateAttendanceMonthSheetHtml(students, allAttendance, "Bulan Ini", settings, classLabel, user.displayName || user.email);
+      triggerPrintAuthenticLandscape(sheetHtml);
+    } else if (type === 'rekap-absensi-semester') {
       const recapData = await calculateAttendanceRecap(activeClass);
       const rows = recapData.recap.map((r, idx) => `
         <tr>
@@ -281,9 +286,14 @@ export function attachReportsEvents() {
           <tbody>${rows}</tbody>
         </table>
       `;
-      await triggerPrintReport(type === 'rekap-absensi-bulanan' ? "Rekapitulasi Presensi Bulanan" : "Rekapitulasi Presensi Semester", classLabel, html);
+      await triggerPrintReport("Rekapitulasi Presensi Semester", classLabel, html);
+    } else if (type === 'nilai-per-mapel' || type === 'rekap-nilai-siswa') {
+      // Format Resmi Autentik Gambar 2: Kurikulum Merdeka (TP1-4 & LM1-5)
+      const allGrades = await getGrades(activeClass, mapel, null, sem);
+      const sheetHtml = generateGradesSemesterSheetHtml(students, allGrades, mapel, sem, settings, classLabel, user.displayName || user.email);
+      triggerPrintAuthenticLandscape(sheetHtml);
     } else {
-      // Rekap Nilai Mapel / Nilai Siswa / Laporan Kepsek
+      // Rapor / Laporan Lainnya
       const recapScores = await calculateGradesRecap(activeClass, mapel, sem);
       const rows = recapScores.map((r, idx) => `
         <tr>

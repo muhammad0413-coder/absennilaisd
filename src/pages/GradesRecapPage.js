@@ -7,8 +7,8 @@
 
 import { getCurrentUser } from '../auth.js';
 import { isAdmin, isHeadmaster, isTeacher, CLASS_LABELS } from '../permissions.js';
-import { calculateGradesRecap, getSettings } from '../services.js';
-import { triggerPrintReport, exportToCSV } from '../components/ReportPrint.js';
+import { calculateGradesRecap, getStudents, getGrades, getSettings } from '../services.js';
+import { triggerPrintReport, triggerPrintAuthenticLandscape, generateGradesSemesterSheetHtml, exportToCSV } from '../components/ReportPrint.js';
 import { toast } from '../components/Toast.js';
 
 export async function renderGradesRecapPage() {
@@ -75,25 +75,20 @@ export async function renderGradesRecapPage() {
         </div>
       </div>
 
-      <!-- Tabel Rekap Nilai -->
+      <!-- Lembar Daftar Nilai Semester Autentik (Format Resmi Gambar 2: Kurikulum Merdeka) -->
       <div class="card">
-        <div class="table-responsive">
-          <table class="table" id="table-grades-recap">
-            <thead>
-              <tr>
-                <th style="width: 45px;">No</th>
-                <th style="width: 85px;">NIS</th>
-                <th>Nama Siswa</th>
-                <th style="text-align: center;">Jumlah Asesmen</th>
-                <th style="text-align: center;">Nilai Rata-Rata</th>
-                <th style="text-align: center;">Status Ketuntasan</th>
-                <th>Catatan Capaian Belajar</th>
-              </tr>
-            </thead>
-            <tbody id="grades-recap-tbody">
-              <!-- Rendered via JS -->
-            </tbody>
-          </table>
+        <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <h3 class="card-title">📋 Format Resmi Daftar Nilai Semester (Gambar 2)</h3>
+            <span style="font-size: 0.78rem; color: #64748b;">Kurikulum Merdeka: Formatif (LM 1-5, TP 1-4), Sumatif LM 1-5, SAS, &amp; NA Semester</span>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-print-authentic-grades">
+            🖨️ Cetak Lembar Nilai Kurikulum Merdeka (PDF)
+          </button>
+        </div>
+
+        <div class="table-responsive" id="container-authentic-grades-sheet" style="background: #ffffff; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+          <!-- Rendered via JS -->
         </div>
       </div>
     </div>
@@ -111,113 +106,52 @@ export function attachGradesRecapEvents() {
   const btnPrint = document.getElementById('btn-print-grades-recap');
   const btnExport = document.getElementById('btn-export-grades-recap-csv');
 
-  let recapRows = [];
+  let currentAuthenticGradesHtml = "";
 
   const loadData = async () => {
     const activeClass = userIsGuru ? user.kelas_id : selectClass.value;
     const subject = selectSubject.value;
     const sem = selectSem.value;
 
-    recapRows = await calculateGradesRecap(activeClass, subject, sem);
+    const students = await getStudents(activeClass, 'Aktif');
+    const allGrades = await getGrades(activeClass, subject, null, sem);
+    const settings = await getSettings();
+    const classLabel = CLASS_LABELS[activeClass] || 'Kelas';
 
-    const tbody = document.getElementById('grades-recap-tbody');
-    if (!tbody) return;
+    currentAuthenticGradesHtml = generateGradesSemesterSheetHtml(
+      students, 
+      allGrades, 
+      subject, 
+      sem, 
+      settings, 
+      classLabel, 
+      user.displayName || user.email
+    );
 
-    if (recapRows.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="7" style="text-align: center; padding: 2rem; color: #64748b;">
-            Tidak ada siswa aktif terdaftar di kelas ini.
-          </td>
-        </tr>
-      `;
-      return;
+    const containerAuthentic = document.getElementById('container-authentic-grades-sheet');
+    if (containerAuthentic) {
+      containerAuthentic.innerHTML = currentAuthenticGradesHtml;
     }
-
-    tbody.innerHTML = recapRows.map((r, idx) => {
-      const avgNum = parseFloat(r.rataRata);
-      const isComplete = !isNaN(avgNum);
-      const isPassed = isComplete && avgNum >= 75;
-
-      return `
-        <tr>
-          <td style="text-align: center;">${idx + 1}</td>
-          <td><strong>${r.student.NIS}</strong></td>
-          <td>
-            <div style="font-weight: 600; color: #0f172a;">${r.student.Nama_Lengkap}</div>
-          </td>
-          <td style="text-align: center;">${r.totalAsesmen} Asesmen</td>
-          <td style="text-align: center;">
-            <strong style="font-size: 1.15rem; color: ${isComplete ? (isPassed ? '#10b981' : '#ef4444') : '#94a3b8'};">
-              ${r.rataRata}
-            </strong>
-          </td>
-          <td style="text-align: center;">
-            <span class="badge ${isComplete ? (isPassed ? 'badge-success' : 'badge-danger') : 'badge-warning'}">
-              ${isComplete ? (isPassed ? 'Tuntas' : 'Perlu Bimbingan') : 'Belum Ada Nilai'}
-            </span>
-          </td>
-          <td style="font-size: 0.82rem; color: #475569;">
-            ${r.grades.length > 0 ? r.grades[0].Deskripsi || '-' : 'Belum ada penilaian tercatat'}
-          </td>
-        </tr>
-      `;
-    }).join('');
   };
 
   if (btnApply) btnApply.onclick = loadData;
   if (selectClass) selectClass.onchange = loadData;
   if (selectSubject) selectSubject.onchange = loadData;
+  if (selectSem) selectSem.onchange = loadData;
 
-  // Cetak Rekap Nilai Resmi
-  if (btnPrint) {
-    btnPrint.onclick = async () => {
-      if (recapRows.length === 0) {
-        toast.warning("Tidak ada data nilai untuk dicetak.");
-        return;
-      }
+  // Cetak Format Resmi Gambar 2
+  const doPrintGrades = () => {
+    if (!currentAuthenticGradesHtml) {
+      toast.warning("Menyiapkan lembar nilai...");
+      loadData().then(() => triggerPrintAuthenticLandscape(currentAuthenticGradesHtml));
+      return;
+    }
+    triggerPrintAuthenticLandscape(currentAuthenticGradesHtml);
+  };
 
-      const activeClass = userIsGuru ? user.kelas_id : selectClass.value;
-      const classLabel = CLASS_LABELS[activeClass] || 'Kelas';
-      const mapelName = selectSubject.value;
-
-      const rowsHtml = recapRows.map((r, idx) => `
-        <tr>
-          <td style="text-align: center;">${idx + 1}</td>
-          <td style="text-align: center;">${r.student.NIS}</td>
-          <td>${r.student.Nama_Lengkap}</td>
-          <td style="text-align: center;">${r.totalAsesmen}</td>
-          <td style="text-align: center; font-weight: bold;">${r.rataRata}</td>
-          <td style="text-align: center;">${r.rataRata !== "Belum Ada Nilai" && parseFloat(r.rataRata) >= 75 ? 'Tuntas' : 'Belum'}</td>
-          <td>${r.grades.length > 0 ? r.grades[0].Deskripsi || '-' : '-'}</td>
-        </tr>
-      `).join('');
-
-      const html = `
-        <div style="margin-bottom: 12px; font-size: 9.5pt;">
-          <strong>Mata Pelajaran:</strong> ${mapelName} | <strong>Semester:</strong> ${selectSem.value}
-        </div>
-        <table class="table" style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr>
-              <th style="width: 35px;">No</th>
-              <th style="width: 75px;">NIS</th>
-              <th>Nama Siswa</th>
-              <th style="width: 70px;">Jml Asesmen</th>
-              <th style="width: 75px;">Rata-Rata</th>
-              <th style="width: 70px;">Status</th>
-              <th>Catatan Capaian</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
-        </table>
-      `;
-
-      await triggerPrintReport(`Rekapitulasi Nilai Capaian Siswa`, classLabel, html);
-    };
-  }
+  if (btnPrint) btnPrint.onclick = doPrintGrades;
+  const btnPrintAuthentic = document.getElementById('btn-print-authentic-grades');
+  if (btnPrintAuthentic) btnPrintAuthentic.onclick = doPrintGrades;
 
   // Ekspor CSV
   if (btnExport) {
