@@ -99,7 +99,7 @@ export async function renderGradesInputPage() {
           </h3>
 
           <button class="btn btn-success btn-sm no-print" id="btn-save-grades-top">
-            💾 Simpan Semua Nilai
+            🚀 Simpan &amp; Kirim ke Google Sheets
           </button>
         </div>
 
@@ -122,7 +122,7 @@ export async function renderGradesInputPage() {
 
         <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;" class="no-print">
           <button class="btn btn-success btn-lg" id="btn-save-grades-bottom">
-            💾 Simpan Seluruh Nilai ke Database &amp; Google Sheets
+            🚀 Simpan Nilai &amp; Kirim Langsung ke Google Sheets
           </button>
         </div>
       </div>
@@ -260,12 +260,20 @@ export function attachGradesInputEvents() {
       return;
     }
 
+    const originalTopText = btnSaveTop ? btnSaveTop.innerHTML : '';
+    const originalBottomText = btnSaveBottom ? btnSaveBottom.innerHTML : '';
+    if (btnSaveTop) btnSaveTop.innerHTML = '⏳ Menyimpan &amp; Mengirim...';
+    if (btnSaveBottom) btnSaveBottom.innerHTML = '⏳ Mengirim ke Database &amp; Google Sheets...';
+
     try {
       const res = await saveGradesBatch(user, payload);
-      toast.success(res.message);
+      toast.success(`${res.message} Data langsung terkirim ke Google Sheets (Data_Nilai)!`);
       loadForm();
     } catch (err) {
       toast.error(err.message || 'Gagal menyimpan nilai.');
+    } finally {
+      if (btnSaveTop) btnSaveTop.innerHTML = originalTopText;
+      if (btnSaveBottom) btnSaveBottom.innerHTML = originalBottomText;
     }
   };
 

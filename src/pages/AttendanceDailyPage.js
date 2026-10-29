@@ -78,7 +78,7 @@ export async function renderAttendanceDailyPage() {
               ✓ Hadir Semua
             </button>
             <button class="btn btn-success btn-sm" id="btn-save-daily-top">
-              💾 Simpan Absensi
+              🚀 Simpan &amp; Kirim ke Google Sheets
             </button>
           </div>
         </div>
@@ -102,7 +102,7 @@ export async function renderAttendanceDailyPage() {
 
         <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;" class="no-print">
           <button class="btn btn-success btn-lg" id="btn-save-daily-bottom">
-            💾 Simpan Data Presensi Siswa Sekarang
+            🚀 Simpan Presensi &amp; Kirim Langsung ke Google Sheets
           </button>
         </div>
       </div>
@@ -297,12 +297,20 @@ export function attachAttendanceDailyEvents() {
       }
     });
 
+    const originalTopText = btnSaveTop ? btnSaveTop.innerHTML : '';
+    const originalBottomText = btnSaveBottom ? btnSaveBottom.innerHTML : '';
+    if (btnSaveTop) btnSaveTop.innerHTML = '⏳ Menyimpan &amp; Mengirim...';
+    if (btnSaveBottom) btnSaveBottom.innerHTML = '⏳ Mengirim ke Database &amp; Google Sheets...';
+
     try {
       const res = await saveAttendanceBatch(user, payload);
-      toast.success(res.message);
+      toast.success(`${res.message} Data langsung terkirim ke Google Sheets (Data_Absensi)!`);
       loadData();
     } catch (err) {
       toast.error(err.message || 'Gagal menyimpan absensi.');
+    } finally {
+      if (btnSaveTop) btnSaveTop.innerHTML = originalTopText;
+      if (btnSaveBottom) btnSaveBottom.innerHTML = originalBottomText;
     }
   };
 

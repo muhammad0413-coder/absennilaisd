@@ -11,7 +11,7 @@
 
 import { getCurrentUser } from '../auth.js';
 import { isAdmin, isHeadmaster, isTeacher, CLASS_LABELS } from '../permissions.js';
-import { getStudents, searchStudents } from '../services.js';
+import { getStudents, searchStudents, syncStudentsFromGoogleSheets } from '../services.js';
 import { exportToCSV, triggerPrintReport } from '../components/ReportPrint.js';
 import { toast } from '../components/Toast.js';
 
@@ -32,7 +32,10 @@ export async function renderStudentsPage() {
             </p>
           </div>
 
-          <div style="display: flex; gap: 0.5rem;" class="no-print">
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" class="no-print">
+            <button class="btn btn-outline btn-sm" id="btn-sync-students-now" title="Ambil pembaruan langsung dari Google Sheets (Data_Siswa)">
+              🔄 Ambil Langsung dari Google Sheets
+            </button>
             <button class="btn btn-outline btn-sm" id="btn-export-students-csv">
               📥 Ekspor CSV
             </button>
@@ -231,6 +234,25 @@ export function attachStudentsEvents() {
     btnExport.onclick = () => {
       exportToCSV("Data_Siswa_SD", currentList);
       toast.success("Data siswa berhasil diekspor ke CSV!");
+    };
+  }
+
+  // Ambil Langsung dari Google Sheets
+  const btnSyncNow = document.getElementById('btn-sync-students-now');
+  if (btnSyncNow) {
+    btnSyncNow.onclick = async () => {
+      btnSyncNow.disabled = true;
+      btnSyncNow.innerHTML = '⏳ Menghubungi Google Sheets...';
+      try {
+        const res = await syncStudentsFromGoogleSheets(user);
+        toast.success(res.message);
+        await loadData();
+      } catch (e) {
+        toast.error('Gagal mengambil data dari Google Sheets: ' + (e.message || e));
+      } finally {
+        btnSyncNow.disabled = false;
+        btnSyncNow.innerHTML = '🔄 Ambil Langsung dari Google Sheets';
+      }
     };
   }
 
