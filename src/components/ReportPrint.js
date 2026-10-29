@@ -10,17 +10,19 @@ import { getSettings } from '../services.js';
 /**
  * Helper Kop Surat Resmi dengan Logo Kiri dan Logo Kanan
  */
-export function renderKopSuratOfficialHtml(settings) {
+export function renderKopSuratOfficialHtml(settings = {}) {
   const schoolName = settings.nama_sekolah || "SDN KESILIR 02";
   const kabupaten = settings.kabupaten || "KABUPATEN JEMBER";
   const dinas = settings.dinas || "DINAS PENDIDIKAN";
   const alamat = settings.alamat_sekolah || "Dsn. Tegal Baru, Ds. Kesilir, Kec. Wuluhan, Kab. Jember";
   const npsn = settings.npsn || "20523456";
+  const logoKiri = settings.logo_kiri || "/logo-kiri.png";
+  const logoKanan = settings.logo_kanan || "/logo-kanan.png";
 
   return `
     <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 12px; font-family: 'Times New Roman', serif;">
       <div style="width: 75px; text-align: left;">
-        <img src="/logo-kiri.png" alt="Logo Kiri Kop Surat" style="height: 65px; object-fit: contain;" onerror="this.src='https://drive.google.com/thumbnail?id=1YkV5mi6NjLLnVwOmS-gk7NUS8vQyIU9M&sz=w200'">
+        <img src="${logoKiri}" alt="Logo Kiri Kop Surat" style="height: 65px; object-fit: contain;" onerror="this.src='/logo-kiri.png'">
       </div>
       <div style="flex: 1; text-align: center; padding: 0 10px;">
         <h4 style="font-size: 10pt; font-weight: bold; margin: 0; text-transform: uppercase;">PEMERINTAH ${kabupaten}</h4>
@@ -29,7 +31,7 @@ export function renderKopSuratOfficialHtml(settings) {
         <p style="font-size: 8pt; margin: 1px 0;">${alamat} | NPSN: ${npsn}</p>
       </div>
       <div style="width: 75px; text-align: right;">
-        <img src="/logo-kanan.png" alt="Logo Kanan Kop Surat" style="height: 65px; object-fit: contain;" onerror="this.src='https://drive.google.com/thumbnail?id=1XWfjQdygAvCCyRfKpTLD40MImqnl08X8&sz=w200'">
+        <img src="${logoKanan}" alt="Logo Kanan Kop Surat" style="height: 65px; object-fit: contain;" onerror="this.src='/logo-kanan.png'">
       </div>
     </div>
   `;

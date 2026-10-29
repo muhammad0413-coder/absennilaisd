@@ -118,7 +118,11 @@ export async function loginWithEmailOnly(email) {
       email: found.Email,
       displayName: found.Nama,
       role: found.Role,
-      kelas_id: found.Kelas_Ditugaskan || "semua"
+      kelas_id: found.Kelas_Ditugaskan || "semua",
+      nip: found.NIP || '',
+      phone: found.Phone || '',
+      Foto: found.Foto || '',
+      foto: found.Foto || ''
     };
   } else if (cleanEmail === 'admin@sekolah.id' || cleanEmail.includes('admin')) {
     currentUser = {
@@ -126,15 +130,23 @@ export async function loginWithEmailOnly(email) {
       email: cleanEmail,
       displayName: "Administrator Sekolah",
       role: ROLES.ADMIN,
-      kelas_id: "semua"
+      kelas_id: "semua",
+      nip: "-",
+      phone: "081234567890",
+      Foto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=250&h=250&fit=crop&crop=faces",
+      foto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=250&h=250&fit=crop&crop=faces"
     };
   } else if (cleanEmail === 'kepsek@sekolah.id' || cleanEmail.includes('kepsek')) {
     currentUser = {
       uid: "USR_KS_001",
       email: cleanEmail,
-      displayName: "Drs. H. Mulyadi, M.Pd. (Kepala Sekolah)",
+      displayName: "Abdullah Mahsar, S.Pd.",
       role: ROLES.HEADMASTER,
-      kelas_id: "semua"
+      kelas_id: "semua",
+      nip: "198306012014121000",
+      phone: "081234567891",
+      Foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=250&h=250&fit=crop&crop=faces",
+      foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=250&h=250&fit=crop&crop=faces"
     };
   } else if (cleanEmail.startsWith('guru') || cleanEmail.includes('guru')) {
     const match = cleanEmail.match(/\d+/);
@@ -142,9 +154,13 @@ export async function loginWithEmailOnly(email) {
     currentUser = {
       uid: `USR_GUR_00${classNum}`,
       email: cleanEmail,
-      displayName: `Guru Kelas ${classNum}`,
+      displayName: classNum === '1' ? 'Suci Ayu Ningrum, S.Pd.' : (classNum === '5' ? 'Dra. Ratna Suminar' : `Guru Kelas ${classNum}`),
       role: ROLES.TEACHER,
-      kelas_id: `kelas_${classNum}`
+      kelas_id: `kelas_${classNum}`,
+      nip: classNum === '1' ? '199410142023212000' : (classNum === '5' ? '195701201992032001' : '-'),
+      phone: `08123456780${classNum}`,
+      Foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces",
+      foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces"
     };
   } else {
     const prefix = cleanEmail.split('@')[0];
@@ -154,7 +170,11 @@ export async function loginWithEmailOnly(email) {
       email: cleanEmail,
       displayName: nameFormatted,
       role: ROLES.TEACHER,
-      kelas_id: "semua"
+      kelas_id: "semua",
+      nip: "-",
+      phone: "-",
+      Foto: "",
+      foto: ""
     };
   }
 

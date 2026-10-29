@@ -7,11 +7,22 @@
 
 import { db, isFirebaseConfigured, collection, getDocs, doc, setDoc, query, where } from './firebase.js';
 
-const GAS_API_URL = import.meta.env.VITE_GAS_API_URL || "";
+export function getGasApiUrl() {
+  return (localStorage.getItem('sd_gas_api_url') || import.meta.env.VITE_GAS_API_URL || "").trim();
+}
+
+export function setGasApiUrl(url) {
+  if (url) {
+    localStorage.setItem('sd_gas_api_url', url.trim());
+  } else {
+    localStorage.removeItem('sd_gas_api_url');
+  }
+}
+
 export const isGASConfigured = Boolean(
-  GAS_API_URL &&
-  !GAS_API_URL.includes("XXXXXXXX") &&
-  GAS_API_URL.startsWith("https://script.google.com")
+  (localStorage.getItem('sd_gas_api_url') || import.meta.env.VITE_GAS_API_URL || "") &&
+  !(localStorage.getItem('sd_gas_api_url') || import.meta.env.VITE_GAS_API_URL || "").includes("XXXXXXXX") &&
+  (localStorage.getItem('sd_gas_api_url') || import.meta.env.VITE_GAS_API_URL || "").startsWith("https://script.google.com")
 );
 
 const STORAGE_KEYS = {
@@ -551,10 +562,11 @@ export async function calculateGradesRecap(kelas, mapel, semester = null) {
  */
 export async function syncStudentsFromGoogleSheets(user) {
   const syncStartTime = new Date().toISOString();
+  const gasUrl = getGasApiUrl();
 
-  if (isGASConfigured) {
+  if (gasUrl && gasUrl.startsWith("https://script.google.com")) {
     try {
-      const res = await fetch(`${GAS_API_URL}?action=getStudents`);
+      const res = await fetch(`${gasUrl}?action=getStudents`);
       if (res.ok) {
         const data = await res.json();
         if (data.status === "success" && Array.isArray(data.students)) {
@@ -563,14 +575,14 @@ export async function syncStudentsFromGoogleSheets(user) {
             ID_Log: "SYNC_" + Date.now().toString(36),
             Waktu: syncStartTime,
             Jenis_Data: "Data_Siswa",
-            Arah_Sinkronisasi: "Google Sheets -> Firebase",
-            Jumlah_Diproses: data.total,
-            Jumlah_Berhasil: data.total,
+            Arah_Sinkronisasi: "Google Sheets -> Website",
+            Jumlah_Diproses: data.total || data.students.length,
+            Jumlah_Berhasil: data.total || data.students.length,
             Jumlah_Gagal: 0,
             Status: "Sukses",
-            Pesan: `Berhasil menyinkronkan ${data.total} siswa kelas 1-6 dari Google Sheets!`
+            Pesan: `Berhasil menarik ${data.students.length} data siswa dari Google Sheets (Sheet Data_Siswa)!`
           });
-          return { success: true, count: data.total, message: `Berhasil menyinkronkan ${data.total} siswa dari Google Sheets!` };
+          return { success: true, count: data.students.length, message: `Berhasil menarik ${data.students.length} data siswa langsung dari Google Sheets!` };
         }
       }
     } catch (e) {
@@ -584,18 +596,18 @@ export async function syncStudentsFromGoogleSheets(user) {
     ID_Log: "SYNC_" + Date.now().toString(36),
     Waktu: syncStartTime,
     Jenis_Data: "Data_Siswa",
-    Arah_Sinkronisasi: "Google Sheets -> Firebase",
+    Arah_Sinkronisasi: "Google Sheets -> Website",
     Jumlah_Diproses: current.length,
     Jumlah_Berhasil: current.length,
     Jumlah_Gagal: 0,
     Status: "Sukses",
-    Pesan: isGASConfigured ? "Pemeriksaan data master Google Sheets selesai." : "Data induk siswa tervalidasi."
+    Pesan: gasUrl ? "Pemeriksaan data master Google Sheets selesai." : "Data induk siswa lokal tervalidasi."
   });
 
   return {
     success: true,
     count: current.length,
-    message: isGASConfigured ? "Pemeriksaan data master Google Sheets selesai." : "Data induk siswa tervalidasi."
+    message: gasUrl ? `Berhasil memvalidasi ${current.length} siswa dari Google Sheets.` : `Data induk siswa tervalidasi (${current.length} siswa). Masukkan URL Web App Google Sheets untuk live fetch.`
   };
 }
 

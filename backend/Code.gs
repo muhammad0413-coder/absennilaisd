@@ -229,14 +229,18 @@ function getStudentsFromMaster(filterKelas) {
   if (!sheet) return { error: "Sheet Data_Siswa tidak ditemukan." };
 
   const values = sheet.getDataRange().getValues();
-  if (values.length <= 1) return { students: [] };
+  if (values.length <= 1) return { status: "success", total: 0, students: [] };
 
-  const headers = values[0];
+  const headers = values[0].map(h => String(h).trim());
+  const kelasColIdx = headers.findIndex(h => h.toLowerCase() === 'kelas');
+  const nisColIdx = headers.findIndex(h => h.toLowerCase() === 'nis');
+  const idColIdx = headers.findIndex(h => h.toLowerCase() === 'id_siswa');
+  const namaColIdx = headers.findIndex(h => h.toLowerCase().includes('nama'));
   const students = [];
 
   for (let i = 1; i < values.length; i++) {
     const row = values[i];
-    const rowKelas = String(row[9]).trim(); // Kolom Kelas
+    const rowKelas = kelasColIdx >= 0 ? String(row[kelasColIdx]).trim() : '';
 
     if (!filterKelas || rowKelas === String(filterKelas).replace('kelas_', '')) {
       const studentObj = {};
@@ -247,6 +251,16 @@ function getStudentsFromMaster(filterKelas) {
         }
         studentObj[headers[h]] = val !== undefined ? String(val).trim() : "";
       }
+
+      // Pastikan atribut vital tidak kosong
+      if (!studentObj.ID_Siswa && nisColIdx >= 0 && row[nisColIdx]) {
+        studentObj.ID_Siswa = "SIS_" + rowKelas + "_" + String(row[nisColIdx]).trim();
+      } else if (!studentObj.ID_Siswa) {
+        studentObj.ID_Siswa = "SIS_" + rowKelas + "_" + i;
+      }
+      if (!studentObj.Status_Siswa) studentObj.Status_Siswa = "Aktif";
+      if (!studentObj.Kelas) studentObj.Kelas = rowKelas || "1";
+
       students.push(studentObj);
     }
   }

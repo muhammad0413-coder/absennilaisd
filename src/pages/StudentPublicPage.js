@@ -88,7 +88,7 @@ export async function renderStudentPublicPage() {
         <div class="card" style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
           <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px double #1e3a8a; padding-bottom: 0.85rem;">
             <div style="width: 75px; text-align: left;">
-              <img src="/logo-kiri.png" alt="Logo Kiri Kop Surat" style="height: 65px; object-fit: contain;" onerror="this.src='https://drive.google.com/thumbnail?id=1YkV5mi6NjLLnVwOmS-gk7NUS8vQyIU9M&sz=w200'">
+              <img src="${settings.logo_kiri || '/logo-kiri.png'}" alt="Logo Kiri Kop Surat" style="height: 65px; object-fit: contain;" onerror="this.src='/logo-kiri.png'">
             </div>
             <div style="flex: 1; text-align: center; padding: 0 10px;">
               <h4 style="font-size: 0.95rem; font-weight: 700; color: #334155; margin: 0; text-transform: uppercase;">PEMERINTAH ${settings.kabupaten || 'KABUPATEN JEMBER'}</h4>
@@ -97,7 +97,7 @@ export async function renderStudentPublicPage() {
               <p style="font-size: 0.78rem; color: #64748b; margin: 2px 0;">${settings.alamat_sekolah || 'Dsn. Tegal Baru, Ds. Kesilir, Kec. Wuluhan, Kab. Jember'} | NPSN: ${settings.npsn || '20523456'}</p>
             </div>
             <div style="width: 75px; text-align: right;">
-              <img src="/logo-kanan.png" alt="Logo Kanan Kop Surat" style="height: 65px; object-fit: contain;" onerror="this.src='https://drive.google.com/thumbnail?id=1XWfjQdygAvCCyRfKpTLD40MImqnl08X8&sz=w200'">
+              <img src="${settings.logo_kanan || '/logo-kanan.png'}" alt="Logo Kanan Kop Surat" style="height: 65px; object-fit: contain;" onerror="this.src='/logo-kanan.png'">
             </div>
           </div>
         </div>
@@ -210,9 +210,6 @@ export async function renderStudentPublicPage() {
                   Format resmi blangko presensi: Tanggal 1 s/d 31, Kolom S, I, A, Jumlah Absen, &amp; Prosentase Absen Bulan ini
                 </span>
               </div>
-              <button class="btn btn-primary btn-sm" id="btn-print-student-att" style="font-weight: 700;">
-                🖨️ Cetak / Simpan PDF Lembar Hadir
-              </button>
             </div>
             <div class="table-responsive" id="container-student-attendance-table" style="background: #ffffff; padding: 1rem; border-radius: 0 0 12px 12px; overflow-x: auto;">
               <!-- Rendered via JS -->
@@ -233,9 +230,6 @@ export async function renderStudentPublicPage() {
                   Format resmi buku nilai: Formatif Lingkup Materi 1–5 (TP1–TP4), Sumatif LM1–5, Sumatif Akhir Semester (SAS), &amp; Nilai Akhir (NA)
                 </span>
               </div>
-              <button class="btn btn-primary btn-sm" id="btn-print-student-grades" style="font-weight: 700; background: #0284c7; border-color: #0284c7;">
-                🖨️ Cetak / Simpan PDF Lembar Nilai
-              </button>
             </div>
             <div class="table-responsive" id="container-student-grades-table" style="background: #ffffff; padding: 1rem; border-radius: 0 0 12px 12px; overflow-x: auto;">
               <!-- Rendered via JS -->
@@ -308,8 +302,6 @@ export function attachStudentPublicEvents() {
 
   const containerAtt = document.getElementById('container-student-attendance-table');
   const containerGrades = document.getElementById('container-student-grades-table');
-  const btnPrintAtt = document.getElementById('btn-print-student-att');
-  const btnPrintGrades = document.getElementById('btn-print-student-grades');
 
   // Modal Login Guru Tersembunyi
   const btnSecretStaff = document.getElementById('btn-secret-staff-login');
@@ -418,19 +410,6 @@ export function attachStudentPublicEvents() {
   if (selectSubject) {
     selectSubject.onchange = () => {
       if (activeClass) renderClassData();
-    };
-  }
-
-  // Cetak Dokumen via Iframe
-  if (btnPrintAtt) {
-    btnPrintAtt.onclick = () => {
-      if (cachedAttHtml) triggerPrintAuthenticLandscape(cachedAttHtml);
-    };
-  }
-
-  if (btnPrintGrades) {
-    btnPrintGrades.onclick = () => {
-      if (cachedGradesHtml) triggerPrintAuthenticLandscape(cachedGradesHtml);
     };
   }
 
