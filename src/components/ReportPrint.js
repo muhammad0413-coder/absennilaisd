@@ -8,6 +8,34 @@
 import { getSettings } from '../services.js';
 
 /**
+ * Helper Kop Surat Resmi dengan Logo Kiri dan Logo Kanan
+ */
+export function renderKopSuratOfficialHtml(settings) {
+  const schoolName = settings.nama_sekolah || "SDN KESILIR 02";
+  const kabupaten = settings.kabupaten || "KABUPATEN JEMBER";
+  const dinas = settings.dinas || "DINAS PENDIDIKAN";
+  const alamat = settings.alamat_sekolah || "Dsn. Tegal Baru, Ds. Kesilir, Kec. Wuluhan, Kab. Jember";
+  const npsn = settings.npsn || "20523456";
+
+  return `
+    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 12px; font-family: 'Times New Roman', serif;">
+      <div style="width: 75px; text-align: left;">
+        <img src="/logo-kiri.png" alt="Logo Kiri Kop Surat" style="height: 65px; object-fit: contain;" onerror="this.src='https://drive.google.com/thumbnail?id=1YkV5mi6NjLLnVwOmS-gk7NUS8vQyIU9M&sz=w200'">
+      </div>
+      <div style="flex: 1; text-align: center; padding: 0 10px;">
+        <h4 style="font-size: 10pt; font-weight: bold; margin: 0; text-transform: uppercase;">PEMERINTAH ${kabupaten}</h4>
+        <h4 style="font-size: 9.5pt; font-weight: bold; margin: 1px 0; text-transform: uppercase;">${dinas}</h4>
+        <h3 style="font-size: 13pt; font-weight: bold; margin: 2px 0; text-transform: uppercase; letter-spacing: 0.5px;">${schoolName}</h3>
+        <p style="font-size: 8pt; margin: 1px 0;">${alamat} | NPSN: ${npsn}</p>
+      </div>
+      <div style="width: 75px; text-align: right;">
+        <img src="/logo-kanan.png" alt="Logo Kanan Kop Surat" style="height: 65px; object-fit: contain;" onerror="this.src='https://drive.google.com/thumbnail?id=1XWfjQdygAvCCyRfKpTLD40MImqnl08X8&sz=w200'">
+      </div>
+    </div>
+  `;
+}
+
+/**
  * Mencetak Halaman dengan Format Standar Sekolah Resmi
  */
 export async function triggerPrintReport(reportTitle, classLabel, contentHtml) {
@@ -20,12 +48,11 @@ export async function triggerPrintReport(reportTitle, classLabel, contentHtml) {
   const todayStr = new Intl.DateTimeFormat('id-ID', { dateStyle: 'long' }).format(new Date());
 
   printContainer.innerHTML = `
-    <!-- KOP SURAT RESMI -->
-    <div class="print-kop-surat">
-      <h2>${settings.nama_sekolah || "SD NEGERI HARAPAN BANGSA"}</h2>
-      <p>NPSN: ${settings.npsn || "20109988"} | ${settings.alamat_sekolah || "Jl. Pendidikan No. 12"}</p>
-      <p style="font-weight: bold; margin-top: 6px; font-size: 11pt; text-transform: uppercase;">${reportTitle} - ${classLabel}</p>
-      <p style="font-size: 8.5pt;">Tahun Ajaran: ${settings.tahun_ajaran_aktif || "2026/2027"} | Semester: ${settings.semester_aktif || "1 (Ganjil)"}</p>
+    <!-- KOP SURAT RESMI (LOGO KIRI & LOGO KANAN) -->
+    ${renderKopSuratOfficialHtml(settings)}
+    <div style="text-align: center; margin-bottom: 12px; font-family: 'Times New Roman', serif;">
+      <p style="font-weight: bold; margin: 0; font-size: 11pt; text-transform: uppercase;">${reportTitle} - ${classLabel}</p>
+      <p style="font-size: 8.5pt; margin: 2px 0;">Tahun Ajaran: ${settings.tahun_pelajaran_aktif || "2026/2027"} | Semester: ${settings.semester_aktif || "1 (Ganjil)"}</p>
     </div>
 
     <!-- KONTEN LAPORAN -->
@@ -90,11 +117,12 @@ export function triggerPrintAuthenticLandscape(sheetHtml) {
 /**
  * GENERATOR GAMBAR 1: DAFTAR HADIR SISWA BULANAN (TANGGAL 1 - 31)
  */
-export function generateAttendanceMonthSheetHtml(students, attendanceList, monthLabel, settings, classLabel, teacherName) {
-  const schoolName = settings.nama_sekolah || "SD NEGERI HARAPAN BANGSA";
-  const year = settings.tahun_pelajaran_aktif || "2026 - 2027";
-  const headmaster = settings.nama_kepala_sekolah || "Drs. H. Mulyadi, M.Pd.";
-  const nipHeadmaster = settings.nip_kepala_sekolah || "-";
+export function generateAttendanceMonthSheetHtml(students, attendanceList, monthLabel, settings, classLabel, teacherName, teacherNip = "-") {
+  const schoolName = settings.nama_sekolah || "SDN KESILIR 02";
+  const year = settings.tahun_pelajaran_aktif || "2026/2027";
+  const headmaster = settings.nama_kepala_sekolah || "Abdullah Mahsar, S.Pd.";
+  const nipHeadmaster = settings.nip_kepala_sekolah || "198306012014121000";
+  const city = (settings.kabupaten || "Jember").replace(/KABUPATEN\s+/i, '').trim();
 
   let totalS = 0, totalI = 0, totalA = 0, grandTotalKehadiran = 0;
 
@@ -142,10 +170,13 @@ export function generateAttendanceMonthSheetHtml(students, attendanceList, month
 
   return `
     <div style="font-family: 'Times New Roman', serif; color: #000; padding: 10px;">
-      <!-- KOP FORMAT RESMI GAMBAR 1 -->
-      <div style="text-align: center; margin-bottom: 14px;">
+      <!-- KOP SURAT RESMI (LOGO KIRI & LOGO KANAN) -->
+      ${renderKopSuratOfficialHtml(settings)}
+
+      <!-- JUDUL GAMBAR 1 -->
+      <div style="text-align: center; margin-bottom: 12px;">
         <h3 style="font-size: 13pt; font-weight: bold; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
-          DAFTAR HADIR SISWA ${schoolName}
+          DAFTAR HADIR SISWA
         </h3>
         <h4 style="font-size: 11pt; font-weight: bold; margin: 2px 0;">
           TAHUN AJARAN ${year}
@@ -199,10 +230,10 @@ export function generateAttendanceMonthSheetHtml(students, attendanceList, month
         </div>
 
         <div style="width: 250px; text-align: left;">
-          <p style="margin: 0;">&nbsp;</p>
-          <p style="margin: 0 0 55px 0;">Guru kelas ${classLabel}</p>
+          <p style="margin: 0;">${city}, ${new Intl.DateTimeFormat('id-ID', { dateStyle: 'long' }).format(new Date())}</p>
+          <p style="margin: 0 0 55px 0;">Guru Kelas ${classLabel}</p>
           <p style="margin: 0; font-weight: bold; text-decoration: underline;">${teacherName || "( ............................................ )"}</p>
-          <p style="margin: 0; font-size: 8.5pt;">NIP. ........................................</p>
+          <p style="margin: 0; font-size: 8.5pt;">NIP. ${teacherNip || '-'}</p>
         </div>
       </div>
     </div>
@@ -212,10 +243,11 @@ export function generateAttendanceMonthSheetHtml(students, attendanceList, month
 /**
  * GENERATOR GAMBAR 2: DAFTAR NILAI SEMESTER (KURIKULUM MERDEKA: FORMATIF TP1-4 & SUMATIF LM1-5)
  */
-export function generateGradesSemesterSheetHtml(students, gradesList, subject, semester, settings, classLabel, teacherName) {
-  const schoolName = settings.nama_sekolah || "SD NEGERI HARAPAN BANGSA";
-  const headmaster = settings.nama_kepala_sekolah || "Drs. H. Mulyadi, M.Pd.";
-  const nipHeadmaster = settings.nip_kepala_sekolah || "-";
+export function generateGradesSemesterSheetHtml(students, gradesList, subject, semester, settings, classLabel, teacherName, teacherNip = "-") {
+  const schoolName = settings.nama_sekolah || "SDN KESILIR 02";
+  const headmaster = settings.nama_kepala_sekolah || "Abdullah Mahsar, S.Pd.";
+  const nipHeadmaster = settings.nip_kepala_sekolah || "198306012014121000";
+  const city = (settings.kabupaten || "Jember").replace(/KABUPATEN\s+/i, '').trim();
   const todayStr = new Intl.DateTimeFormat('id-ID', { dateStyle: 'long' }).format(new Date());
 
   const rowsHtml = students.map((s, idx) => {
@@ -276,7 +308,10 @@ export function generateGradesSemesterSheetHtml(students, gradesList, subject, s
 
   return `
     <div style="font-family: 'Times New Roman', serif; color: #000; padding: 10px;">
-      <!-- KOP FORMAT RESMI GAMBAR 2 -->
+      <!-- KOP SURAT RESMI (LOGO KIRI & LOGO KANAN) -->
+      ${renderKopSuratOfficialHtml(settings)}
+
+      <!-- JUDUL GAMBAR 2 -->
       <div style="text-align: center; margin-bottom: 12px;">
         <h3 style="font-size: 13pt; font-weight: bold; margin: 0; text-transform: uppercase;">
           DAFTAR NILAI SEMESTER ${semester || "1"}
@@ -346,10 +381,10 @@ export function generateGradesSemesterSheetHtml(students, gradesList, subject, s
         </div>
 
         <div style="width: 250px; text-align: left;">
-          <p style="margin: 0;">Jakarta, ${todayStr}</p>
+          <p style="margin: 0;">${city}, ${todayStr}</p>
           <p style="margin: 0 0 50px 0;">Wali Kelas,</p>
           <p style="margin: 0; font-weight: bold; text-decoration: underline;">${teacherName || "( ............................................ )"}</p>
-          <p style="margin: 0; font-size: 8.5pt;">NIP. ........................................</p>
+          <p style="margin: 0; font-size: 8.5pt;">NIP. ${teacherNip || '-'}</p>
         </div>
       </div>
     </div>

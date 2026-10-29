@@ -163,6 +163,64 @@ export async function loginWithEmailOnly(email) {
   return currentUser;
 }
 
+/**
+ * Perbarui Profil Guru / Staf Aktif
+ * Memungkinkan pengubahan Nama Lengkap, Email Akun, NIP, Nomor HP, dan Penugasan Kelas
+ */
+export async function updateCurrentUserProfile(updatedData = {}) {
+  if (!currentUser) throw new Error("Tidak ada pengguna aktif.");
+
+  const oldEmail = (currentUser.email || '').toLowerCase();
+  const newEmail = updatedData.email ? updatedData.email.trim().toLowerCase() : oldEmail;
+
+  currentUser = {
+    ...currentUser,
+    displayName: updatedData.displayName ? updatedData.displayName.trim() : currentUser.displayName,
+    email: newEmail,
+    nip: updatedData.nip !== undefined ? updatedData.nip.trim() : (currentUser.nip || ''),
+    phone: updatedData.phone !== undefined ? updatedData.phone.trim() : (currentUser.phone || ''),
+    kelas_id: updatedData.kelas_id || currentUser.kelas_id
+  };
+
+  // 1. Simpan sesi aktif ke localStorage
+  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentUser));
+
+  // 2. Perbarui juga di daftar master akun pengguna (sd_users_accounts)
+  try {
+    const users = JSON.parse(localStorage.getItem('sd_users_accounts') || '[]');
+    const idx = users.findIndex(u => (u.Email || '').toLowerCase() === oldEmail || u.User_ID === currentUser.uid);
+    if (idx >= 0) {
+      users[idx] = {
+        ...users[idx],
+        Nama: currentUser.displayName,
+        Email: currentUser.email,
+        NIP: currentUser.nip,
+        Phone: currentUser.phone,
+        Kelas_Ditugaskan: currentUser.kelas_id,
+        Updated_At: new Date().toISOString()
+      };
+    } else {
+      users.push({
+        User_ID: currentUser.uid,
+        Nama: currentUser.displayName,
+        Email: currentUser.email,
+        NIP: currentUser.nip,
+        Phone: currentUser.phone,
+        Role: currentUser.role,
+        Kelas_Ditugaskan: currentUser.kelas_id,
+        Status: "Aktif",
+        Updated_At: new Date().toISOString()
+      });
+    }
+    localStorage.setItem('sd_users_accounts', JSON.stringify(users));
+  } catch (e) {
+    console.warn("Gagal memperbarui sd_users_accounts:", e);
+  }
+
+  notifyAuthChanged();
+  return currentUser;
+}
+
 function handleDemoLogin(email, password) {
   if (email === 'admin@sekolah.id') {
     currentUser = {

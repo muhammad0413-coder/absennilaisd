@@ -42,14 +42,18 @@ window.addEventListener('hashchange', () => {
 });
 
 // 4. Auth State Listener
-onAuthChanged((user) => {
-  // Jika sedang di halaman utama atau login, segarkan navigasi
-  fetchLatestStudentsIfConfigured().catch(() => {});
-  navigateTo(window.location.hash || '#student');
+onAuthChanged(() => {
+  navigateTo(window.location.hash || '');
 });
 
-// 5. Initial Mount
-document.addEventListener('DOMContentLoaded', () => {
+// 5. Initial Mount (Booting Langsung Tanpa Menunggu jika DOM sudah siap)
+function bootApp() {
+  navigateTo(window.location.hash || '');
   fetchLatestStudentsIfConfigured().catch(() => {});
-  navigateTo(window.location.hash || '#student');
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootApp);
+} else {
+  bootApp();
+}

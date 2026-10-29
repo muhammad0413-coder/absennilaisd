@@ -121,7 +121,13 @@ export function attachUsersEvents() {
 
               <div class="form-group">
                 <label class="form-label">Email Akun (Login) *</label>
-                <input type="email" id="u-email" class="form-input" required placeholder="nama@sekolah.id" value="${userToEdit ? userToEdit.Email : ''}" ${isEdit ? 'disabled' : ''}>
+                <input type="email" id="u-email" class="form-input" required placeholder="nama@sekolah.id" value="${userToEdit ? userToEdit.Email : ''}">
+                <span class="form-hint">Email akun dapat diubah sewaktu-waktu sesuai penugasan guru.</span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">NIP / NUPTK</label>
+                <input type="text" id="u-nip" class="form-input" placeholder="Contoh: 198503152010012001 (atau -)" value="${userToEdit ? (userToEdit.NIP || '') : ''}">
               </div>
 
               <div class="form-row">
@@ -166,6 +172,7 @@ export function attachUsersEvents() {
         User_ID: userToEdit ? userToEdit.User_ID : null,
         Nama: document.getElementById('u-name').value.trim(),
         Email: document.getElementById('u-email').value.trim().toLowerCase(),
+        NIP: document.getElementById('u-nip').value.trim(),
         Role: document.getElementById('u-role').value,
         Kelas_Ditugaskan: document.getElementById('u-class').value,
         Status: "Aktif"

@@ -102,10 +102,10 @@ export function renderSidebar(currentRoute = '#dashboard') {
 
   return `
     <aside class="sidebar no-print">
-      <div class="sidebar-header">
-        <div class="sidebar-brand-icon">SD</div>
+      <div class="sidebar-header" style="display: flex; align-items: center; gap: 0.75rem;">
+        <img src="/logo-kanan.png" alt="Logo Sekolah" style="width: 38px; height: 38px; object-fit: contain; border-radius: 8px;" onerror="this.src='https://drive.google.com/thumbnail?id=1XWfjQdygAvCCyRfKpTLD40MImqnl08X8&sz=w200'">
         <div>
-          <div class="sidebar-brand-title">SI Absen &amp; Nilai</div>
+          <div class="sidebar-brand-title">SDN KESILIR 02</div>
           <div class="sidebar-brand-sub">Kelas 1 – 6 Terpadu</div>
         </div>
       </div>
@@ -114,16 +114,17 @@ export function renderSidebar(currentRoute = '#dashboard') {
         ${navLinks}
       </nav>
 
-      <div class="sidebar-user">
+      <div class="sidebar-user" id="btn-sidebar-profile" style="cursor: pointer;" title="Klik untuk edit nama, email, NIP profil guru">
         <div class="sidebar-user-avatar">
           ${user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
         </div>
-        <div class="sidebar-user-info">
-          <div class="sidebar-user-name">${user.displayName}</div>
-          <div class="sidebar-user-role">
-            <span class="badge ${roleBadge.class}" style="font-size: 0.68rem; padding: 1px 6px;">
-              ${roleBadge.label}
-            </span>
+        <div class="sidebar-user-info" style="flex: 1;">
+          <div class="sidebar-user-name" style="display: flex; align-items: center; justify-content: space-between;">
+            <span>${user.displayName}</span>
+            <span style="font-size: 0.75rem; opacity: 0.8;">✏️</span>
+          </div>
+          <div class="sidebar-user-role" style="font-size: 0.72rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            ${user.email}
           </div>
         </div>
       </div>

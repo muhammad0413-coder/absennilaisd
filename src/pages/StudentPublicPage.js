@@ -6,7 +6,7 @@
  * ==============================================================================
  */
 
-import { getStudents, getAttendance, getGrades, getSettings } from '../services.js';
+import { getStudents, getAttendance, getGrades, getSettings, getUsers } from '../services.js';
 import { generateAttendanceMonthSheetHtml, generateGradesSemesterSheetHtml, triggerPrintAuthenticLandscape } from '../components/ReportPrint.js';
 import { loginWithEmailOnly } from '../auth.js';
 import { CLASS_LABELS } from '../permissions.js';
@@ -20,21 +20,19 @@ export async function renderStudentPublicPage() {
     <div style="min-height: 100vh; background: #f8fafc; display: flex; flex-direction: column; font-family: var(--font-sans);">
       <!-- HEADER UTAMA TUNGGAL -->
       <header style="background: white; border-bottom: 1px solid #e2e8f0; padding: 0.85rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #1e3a8a, #0284c7); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: white;">
-            🏫
-          </div>
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <img src="/logo-kanan.png" alt="Logo Sekolah" style="width: 44px; height: 44px; object-fit: contain; border-radius: 8px;" onerror="this.src='https://drive.google.com/thumbnail?id=1XWfjQdygAvCCyRfKpTLD40MImqnl08X8&sz=w200'">
           <div>
             <h1 style="font-size: 1.15rem; font-weight: 800; color: #1e3a8a; margin: 0; line-height: 1.2;">
               ${schoolName}
             </h1>
-            <p style="font-size: 0.75rem; color: #64748b; margin: 0;">Sistem Informasi Absensi &amp; Penilaian Siswa</p>
+            <p style="font-size: 0.75rem; color: #64748b; margin: 0;">Sistem Informasi Absensi &amp; Penilaian Siswa (Kelas 1–6)</p>
           </div>
         </div>
 
         <!-- AKSES GURU / STAF TERSEMBUNYI (HANYA SIMBOL PANAH) -->
         <div>
-          <button id="btn-secret-staff-login" title="Akses Khusus Staf" style="background: none; border: 1px solid transparent; color: #94a3b8; font-size: 1.4rem; cursor: pointer; padding: 6px 12px; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.color='#1e3a8a'; this.style.borderColor='#cbd5e1';" onmouseout="this.style.color='#94a3b8'; this.style.borderColor='transparent';">
+          <button id="btn-secret-staff-login" title="Akses Masuk Guru / Staf" style="background: none; border: 1px solid transparent; color: #94a3b8; font-size: 1.4rem; cursor: pointer; padding: 6px 12px; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.color='#1e3a8a'; this.style.borderColor='#cbd5e1';" onmouseout="this.style.color='#94a3b8'; this.style.borderColor='transparent';">
             ➔
           </button>
         </div>
@@ -42,6 +40,23 @@ export async function renderStudentPublicPage() {
 
       <!-- KONTEN PORTAL SISWA -->
       <main style="flex: 1; max-width: 1200px; width: 100%; margin: 0 auto; padding: 1.5rem 1rem;">
+        <!-- KOP SURAT RESMI SEKOLAH (LOGO KIRI & LOGO KANAN) -->
+        <div class="card" style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px double #1e3a8a; padding-bottom: 0.85rem;">
+            <div style="width: 75px; text-align: left;">
+              <img src="/logo-kiri.png" alt="Logo Kiri Kop Surat" style="height: 65px; object-fit: contain;" onerror="this.src='https://drive.google.com/thumbnail?id=1YkV5mi6NjLLnVwOmS-gk7NUS8vQyIU9M&sz=w200'">
+            </div>
+            <div style="flex: 1; text-align: center; padding: 0 10px;">
+              <h4 style="font-size: 0.95rem; font-weight: 700; color: #334155; margin: 0; text-transform: uppercase;">PEMERINTAH ${settings.kabupaten || 'KABUPATEN JEMBER'}</h4>
+              <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin: 2px 0; text-transform: uppercase;">${settings.dinas || 'DINAS PENDIDIKAN'}</h4>
+              <h2 style="font-size: 1.35rem; font-weight: 900; color: #1e3a8a; margin: 2px 0; text-transform: uppercase; letter-spacing: 0.5px;">${schoolName}</h2>
+              <p style="font-size: 0.78rem; color: #64748b; margin: 2px 0;">${settings.alamat_sekolah || 'Dsn. Tegal Baru, Ds. Kesilir, Kec. Wuluhan, Kab. Jember'} | NPSN: ${settings.npsn || '20523456'}</p>
+            </div>
+            <div style="width: 75px; text-align: right;">
+              <img src="/logo-kanan.png" alt="Logo Kanan Kop Surat" style="height: 65px; object-fit: contain;" onerror="this.src='https://drive.google.com/thumbnail?id=1XWfjQdygAvCCyRfKpTLD40MImqnl08X8&sz=w200'">
+            </div>
+          </div>
+        </div>
         <!-- Banner Portal -->
         <div style="text-align: center; margin-bottom: 1.75rem; background: linear-gradient(135deg, #1e3a8a, #0284c7); color: white; padding: 1.75rem 1rem; border-radius: 16px; box-shadow: 0 4px 12px rgba(30, 58, 138, 0.15);">
           <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.35rem;">
@@ -250,13 +265,17 @@ export function attachStudentPublicEvents() {
     const attendance = await getAttendance(classKey);
     const grades = await getGrades(classKey);
     const settings = await getSettings();
+    const users = await getUsers();
+    const teacherAccount = users.find(u => u.Kelas_Ditugaskan === classKey && (u.Role === 'guru' || !u.Role));
+    const teacherName = teacherAccount?.Nama || (classNum === '1' ? 'Suci Ayu Ningrum, S.Pd.' : `Guru Kelas ${classNum}`);
+    const teacherNip = teacherAccount?.NIP || (classNum === '1' ? '199410142023212000' : '-');
 
     // 1. Render Gambar 1: Daftar Hadir 1-31
-    cachedAttHtml = generateAttendanceMonthSheetHtml(students, attendance, "Bulan Ini", settings, classLabel, `Guru Kelas ${classNum}`);
+    cachedAttHtml = generateAttendanceMonthSheetHtml(students, attendance, "Bulan Ini", settings, classLabel, teacherName, teacherNip);
     if (containerAtt) containerAtt.innerHTML = cachedAttHtml;
 
     // 2. Render Gambar 2: Lembar Nilai Kurikulum Merdeka
-    cachedGradesHtml = generateGradesSemesterSheetHtml(students, grades, "Matematika", "1 (Ganjil)", settings, classLabel, `Wali Kelas ${classNum}`);
+    cachedGradesHtml = generateGradesSemesterSheetHtml(students, grades, "Matematika", settings.semester_aktif || "1 (Ganjil)", settings, classLabel, teacherName, teacherNip);
     if (containerGrades) containerGrades.innerHTML = cachedGradesHtml;
   };
 

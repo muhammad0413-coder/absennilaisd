@@ -46,12 +46,34 @@ export async function renderSettingsPage() {
 
             <div class="form-row">
               <div class="form-group">
+                <label class="form-label">Pemerintah Kabupaten / Kota *</label>
+                <input type="text" id="set-sch-kab" class="form-input" required value="${settings.kabupaten || 'KABUPATEN JEMBER'}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Dinas Terkait *</label>
+                <input type="text" id="set-sch-dinas" class="form-input" required value="${settings.dinas || 'DINAS PENDIDIKAN'}">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">URL / Berkas Logo Kiri Kop Surat</label>
+                <input type="text" id="set-sch-logol" class="form-input" value="${settings.logo_kiri || '/logo-kiri.png'}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">URL / Berkas Logo Kanan Kop Surat (Logo Sekolah)</label>
+                <input type="text" id="set-sch-logor" class="form-input" value="${settings.logo_kanan || '/logo-kanan.png'}">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
                 <label class="form-label">Nama Kepala Sekolah *</label>
-                <input type="text" id="set-sch-head" class="form-input" required value="${settings.nama_kepala_sekolah || 'Drs. H. Mulyadi, M.Pd.'}">
+                <input type="text" id="set-sch-head" class="form-input" required value="${settings.nama_kepala_sekolah || 'Abdullah Mahsar, S.Pd.'}">
               </div>
               <div class="form-group">
                 <label class="form-label">NIP Kepala Sekolah *</label>
-                <input type="text" id="set-sch-nip" class="form-input" required value="${settings.nip_kepala_sekolah || '197203151998031004'}">
+                <input type="text" id="set-sch-nip" class="form-input" required value="${settings.nip_kepala_sekolah || '198306012014121000'}">
               </div>
             </div>
 
@@ -105,6 +127,10 @@ export function attachSettingsEvents() {
         nama_sekolah: document.getElementById('set-sch-name').value.trim(),
         npsn: document.getElementById('set-sch-npsn').value.trim(),
         alamat_sekolah: document.getElementById('set-sch-addr').value.trim(),
+        kabupaten: document.getElementById('set-sch-kab').value.trim(),
+        dinas: document.getElementById('set-sch-dinas').value.trim(),
+        logo_kiri: document.getElementById('set-sch-logol').value.trim(),
+        logo_kanan: document.getElementById('set-sch-logor').value.trim(),
         nama_kepala_sekolah: document.getElementById('set-sch-head').value.trim(),
         nip_kepala_sekolah: document.getElementById('set-sch-nip').value.trim(),
         tahun_pelajaran_aktif: document.getElementById('set-sch-year').value.trim(),

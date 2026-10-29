@@ -14,11 +14,9 @@ export function renderLoginPage() {
       <div style="background: white; border-radius: var(--radius-xl); max-width: 440px; width: 100%; padding: 2.25rem; box-shadow: var(--shadow-xl);">
         <!-- Header Portal -->
         <div style="text-align: center; margin-bottom: 1.5rem;">
-          <div style="width: 58px; height: 58px; border-radius: 16px; background: linear-gradient(135deg, #1e3a8a, #0284c7); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 0.75rem;">
-            🏫
-          </div>
+          <img src="/logo-kanan.png" alt="Logo Sekolah" style="width: 58px; height: 58px; object-fit: contain; border-radius: 12px; margin-bottom: 0.5rem;" onerror="this.src='https://drive.google.com/thumbnail?id=1XWfjQdygAvCCyRfKpTLD40MImqnl08X8&sz=w200'">
           <h2 style="font-size: 1.4rem; font-weight: 800; color: #0f172a; margin-bottom: 0.2rem;">Portal Guru &amp; Staf</h2>
-          <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Sistem Informasi Manajemen Siswa SD Kelas 1–6</p>
+          <p style="font-size: 0.85rem; color: #64748b; margin: 0;">SDN KESILIR 02 (Kelas 1–6)</p>
         </div>
 
         <div id="login-error-alert" style="display: none; padding: 0.75rem; border-radius: 8px; background: #fee2e2; color: #991b1b; font-size: 0.85rem; margin-bottom: 1rem; border: 1px solid #fecaca;"></div>

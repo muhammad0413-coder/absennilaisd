@@ -505,7 +505,24 @@ export async function getSyncStatusSummary() {
 // ==============================================================================
 
 export async function getSettings() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+  return {
+    nama_sekolah: "SDN KESILIR 02",
+    npsn: "20523456",
+    alamat_sekolah: "Dsn. Tegal Baru, Ds. Kesilir, Kec. Wuluhan, Kab. Jember",
+    kabupaten: "KABUPATEN JEMBER",
+    dinas: "DINAS PENDIDIKAN",
+    nama_kepala_sekolah: "Abdullah Mahsar, S.Pd.",
+    nip_kepala_sekolah: "198306012014121000",
+    logo_kiri: "/logo-kiri.png",
+    logo_kanan: "/logo-kanan.png",
+    logo_sekolah: "/logo-kanan.png",
+    tahun_pelajaran_aktif: "2026/2027",
+    semester_aktif: "1 (Ganjil)",
+    kkm_default: 75,
+    daftar_mata_pelajaran: "Pendidikan Pancasila,Bahasa Indonesia,Matematika,Ilmu Pengetahuan Alam dan Sosial (IPAS),Pendidikan Jasmani Olahraga dan Kesehatan (PJOK),Seni Budaya,Bahasa Inggris",
+    ...saved
+  };
 }
 
 export async function updateSettings(user, newSettings) {
@@ -536,5 +553,18 @@ export async function saveUser(adminUser, userData) {
     });
   }
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+
+  const activeUser = JSON.parse(localStorage.getItem('sd_auth_user') || 'null');
+  if (activeUser && (activeUser.uid === userData.User_ID || activeUser.email === userData.Email)) {
+    const updatedActive = {
+      ...activeUser,
+      displayName: userData.Nama || activeUser.displayName,
+      email: userData.Email || activeUser.email,
+      nip: userData.NIP || activeUser.nip,
+      kelas_id: userData.Kelas_Ditugaskan || activeUser.kelas_id
+    };
+    localStorage.setItem('sd_auth_user', JSON.stringify(updatedActive));
+  }
+
   return { success: true, message: "Data pengguna berhasil diperbarui!" };
 }

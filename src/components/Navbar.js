@@ -7,6 +7,7 @@
 
 import { getCurrentUser, logout } from '../auth.js';
 import { getRoleBadge } from '../permissions.js';
+import { openProfileModal } from './ProfileModal.js';
 import { toast } from './Toast.js';
 
 export function renderNavbar(pageTitle = "Dashboard", isOnline = true) {
@@ -30,11 +31,15 @@ export function renderNavbar(pageTitle = "Dashboard", isOnline = true) {
         </div>
 
         ${user ? `
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
             <div style="text-align: right; display: none;" class="desktop-user-info">
               <div style="font-size: 0.85rem; font-weight: 600; color: var(--slate-900);">${user.displayName}</div>
               <span class="badge ${roleBadge.class}">${roleBadge.label}</span>
             </div>
+
+            <button class="btn btn-outline btn-sm" id="btn-navbar-profile" title="Ubah Nama, Email, NIP Profil Guru" style="font-size: 0.8rem; font-weight: 600;">
+              👤 Profil
+            </button>
 
             <button class="btn btn-outline btn-sm" id="btn-navbar-logout" title="Keluar / Logout" style="color: var(--accent-rose); border-color: var(--accent-rose-light);">
               🚪 Keluar
@@ -51,6 +56,16 @@ export function renderNavbar(pageTitle = "Dashboard", isOnline = true) {
 }
 
 export function attachNavbarEvents() {
+  const btnProfile = document.getElementById('btn-navbar-profile');
+  if (btnProfile) {
+    btnProfile.onclick = () => openProfileModal();
+  }
+
+  const btnSidebarProfile = document.getElementById('btn-sidebar-profile');
+  if (btnSidebarProfile) {
+    btnSidebarProfile.onclick = () => openProfileModal();
+  }
+
   const btnLogout = document.getElementById('btn-navbar-logout');
   if (btnLogout) {
     btnLogout.onclick = async () => {
