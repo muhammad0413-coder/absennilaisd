@@ -9,7 +9,7 @@ cd /d "d:\VIVTA LUSIANA\absen"
 echo Sedang menghubungi GitHub...
 echo Jika jendela login muncul, klik "Sign in with your browser" untuk mengizinkan.
 echo.
-git push -u origin master
+git push -u origin main
 echo.
 if %ERRORLEVEL% EQU 0 (
     echo ====================================================================
