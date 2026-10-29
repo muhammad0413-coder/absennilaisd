@@ -117,22 +117,10 @@ function setupDatabaseAndFolders() {
     sheetUsers.getRange(2, 1, defaultUsers.length, 7).setValues(defaultUsers);
   }
 
-  // 4. Data Master Siswa Awal untuk Kelas 1–6 (Jika Masih Kosong)
+  // 4. Inisialisasi Sheet Data_Siswa (Tanpa Data Dummy)
+  // Sheet Data_Siswa disiapkan bersih dengan header resmi untuk diisi data asli oleh Administrator
   const sheetSiswa = ss.getSheetByName(CONFIG.SHEETS.SISWA);
-  if (sheetSiswa.getLastRow() <= 1) {
-    const now = new Date().toISOString();
-    const sampleStudents = [
-      ["STD_1001", "1001", "0161234501", "Aditya Pratama", "Laki-laki", "Jakarta", "2019-04-12", "Budi Pratama", "Jl. Dahlia No. 5", "1", "2026/2027", "Aktif", now, "Synced"],
-      ["STD_1002", "1002", "0161234502", "Annisa Cantika Putri", "Perempuan", "Bandung", "2019-06-20", "Hendra Putri", "Jl. Mawar No. 12", "1", "2026/2027", "Aktif", now, "Synced"],
-      ["STD_2001", "2001", "0151234501", "Bayu Bagaskara", "Laki-laki", "Jakarta", "2018-03-10", "Dedi Bagas", "Jl. Anggrek No. 3", "2", "2026/2027", "Aktif", now, "Synced"],
-      ["STD_3001", "3001", "0141234501", "Citra Kirana", "Perempuan", "Bogor", "2017-08-15", "Rudi Kirana", "Jl. Kenanga No. 8", "3", "2026/2027", "Aktif", now, "Synced"],
-      ["STD_4001", "4001", "0131234501", "Danu Wijaya", "Laki-laki", "Depok", "2016-11-22", "Wijaya Hadi", "Jl. Melati No. 14", "4", "2026/2027", "Aktif", now, "Synced"],
-      ["STD_5001", "5001", "0121234501", "Eka Putri Lestari", "Perempuan", "Jakarta", "2015-05-18", "Lestari Eko", "Jl. Cempaka No. 2", "5", "2026/2027", "Aktif", now, "Synced"],
-      ["STD_6001", "6001", "0111234501", "Faris Al-Ghifari", "Laki-laki", "Surabaya", "2014-02-10", "Ghifari Hasan", "Jl. Flamboyan No. 19", "6", "2026/2027", "Aktif", now, "Synced"],
-      ["STD_6002", "6002", "0111234502", "Ghea Salsabila", "Perempuan", "Jakarta", "2014-07-25", "Salsabila Ridwan", "Jl. Teratai No. 7", "6", "2026/2027", "Aktif", now, "Synced"]
-    ];
-    sheetSiswa.getRange(2, 1, sampleStudents.length, 14).setValues(sampleStudents);
-  }
+  Logger.log("Sheet Data_Siswa siap digunakan untuk data asli murid.");
 
   // 5. Inisialisasi Struktur Folder Arsip Google Drive
   const rootFolder = getOrCreateFolder(CONFIG.DRIVE_ROOT);

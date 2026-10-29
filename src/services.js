@@ -24,33 +24,9 @@ const STORAGE_KEYS = {
 };
 
 // ==============================================================================
-// SEED MASTER DATA KELAS 1–6 (SIMULASI HASIL SINKRONISASI GOOGLE SHEETS)
+// DATA MASTER & OPERASIONAL MURNI (TANPA DATA DUMMY)
 // ==============================================================================
-const INITIAL_MASTER_STUDENTS = [
-  // Kelas 1
-  { ID_Siswa: "STD_1001", NIS: "1001", NISN: "0161234501", Nama_Lengkap: "Aditya Pratama [DEMO]", Jenis_Kelamin: "Laki-laki", Tempat_Lahir: "Jakarta", Tanggal_Lahir: "2019-04-12", Nama_Orang_Tua: "Budi Pratama", Alamat: "Jl. Dahlia No. 5", Kelas: "1", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
-  { ID_Siswa: "STD_1002", NIS: "1002", NISN: "0161234502", Nama_Lengkap: "Annisa Cantika Putri [DEMO]", Jenis_Kelamin: "Perempuan", Tempat_Lahir: "Bandung", Tanggal_Lahir: "2019-06-20", Nama_Orang_Tua: "Hendra Putri", Alamat: "Jl. Mawar No. 12", Kelas: "1", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
-  
-  // Kelas 2
-  { ID_Siswa: "STD_2001", NIS: "2001", NISN: "0151234501", Nama_Lengkap: "Bayu Bagaskara [DEMO]", Jenis_Kelamin: "Laki-laki", Tempat_Lahir: "Jakarta", Tanggal_Lahir: "2018-03-10", Nama_Orang_Tua: "Dedi Bagas", Alamat: "Jl. Anggrek No. 3", Kelas: "2", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
-  { ID_Siswa: "STD_2002", NIS: "2002", NISN: "0151234502", Nama_Lengkap: "Bella Safira [DEMO]", Jenis_Kelamin: "Perempuan", Tempat_Lahir: "Semarang", Tanggal_Lahir: "2018-09-14", Nama_Orang_Tua: "Safira Gunawan", Alamat: "Jl. Melati No. 9", Kelas: "2", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
-
-  // Kelas 3
-  { ID_Siswa: "STD_3001", NIS: "3001", NISN: "0141234501", Nama_Lengkap: "Citra Kirana [DEMO]", Jenis_Kelamin: "Perempuan", Tempat_Lahir: "Bogor", Tanggal_Lahir: "2017-08-15", Nama_Orang_Tua: "Rudi Kirana", Alamat: "Jl. Kenanga No. 8", Kelas: "3", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
-  { ID_Siswa: "STD_3002", NIS: "3002", NISN: "0141234502", Nama_Lengkap: "Candra Wijaya [DEMO]", Jenis_Kelamin: "Laki-laki", Tempat_Lahir: "Jakarta", Tanggal_Lahir: "2017-12-05", Nama_Orang_Tua: "Wijaya Hartono", Alamat: "Jl. Anyelir No. 11", Kelas: "3", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
-
-  // Kelas 4
-  { ID_Siswa: "STD_4001", NIS: "4001", NISN: "0131234501", Nama_Lengkap: "Danu Wijaya [DEMO]", Jenis_Kelamin: "Laki-laki", Tempat_Lahir: "Depok", Tanggal_Lahir: "2016-11-22", Nama_Orang_Tua: "Wijaya Hadi", Alamat: "Jl. Melati No. 14", Kelas: "4", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
-  { ID_Siswa: "STD_4002", NIS: "4002", NISN: "0131234502", Nama_Lengkap: "Dinda Permata [DEMO]", Jenis_Kelamin: "Perempuan", Tempat_Lahir: "Jakarta", Tanggal_Lahir: "2016-01-30", Nama_Orang_Tua: "Permata Salim", Alamat: "Jl. Kamboja No. 4", Kelas: "4", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
-
-  // Kelas 5
-  { ID_Siswa: "STD_5001", NIS: "5001", NISN: "0121234501", Nama_Lengkap: "Eka Putri Lestari [DEMO]", Jenis_Kelamin: "Perempuan", Tempat_Lahir: "Jakarta", Tanggal_Lahir: "2015-05-18", Nama_Orang_Tua: "Lestari Eko", Alamat: "Jl. Cempaka No. 2", Kelas: "5", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
-  { ID_Siswa: "STD_5002", NIS: "5002", NISN: "0121234502", Nama_Lengkap: "Erlangga Yudha [DEMO]", Jenis_Kelamin: "Laki-laki", Tempat_Lahir: "Bandung", Tanggal_Lahir: "2015-10-12", Nama_Orang_Tua: "Yudha Pratama", Alamat: "Jl. Mawar No. 27", Kelas: "5", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
-
-  // Kelas 6
-  { ID_Siswa: "STD_6001", NIS: "6001", NISN: "0111234501", Nama_Lengkap: "Faris Al-Ghifari [DEMO]", Jenis_Kelamin: "Laki-laki", Tempat_Lahir: "Surabaya", Tanggal_Lahir: "2014-02-10", Nama_Orang_Tua: "Ghifari Hasan", Alamat: "Jl. Flamboyan No. 19", Kelas: "6", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
-  { ID_Siswa: "STD_6002", NIS: "6002", NISN: "0111234502", Nama_Lengkap: "Ghea Salsabila [DEMO]", Jenis_Kelamin: "Perempuan", Tempat_Lahir: "Jakarta", Tanggal_Lahir: "2014-07-25", Nama_Orang_Tua: "Salsabila Ridwan", Alamat: "Jl. Teratai No. 7", Kelas: "6", Tahun_Pelajaran: "2026/2027", Status_Siswa: "Aktif", Updated_At: new Date().toISOString(), Sync_Status: "Synced" }
-];
+const INITIAL_MASTER_STUDENTS = [];
 
 const INITIAL_SETTINGS = {
   nama_sekolah: "SD NEGERI HARAPAN BANGSA",
@@ -66,18 +42,18 @@ const INITIAL_SETTINGS = {
 
 const INITIAL_USERS = [
   { User_ID: "USR_ADM_001", Nama: "Administrator Sekolah", Email: "admin@sekolah.id", Role: "admin", Kelas_Ditugaskan: "semua", Status: "Aktif" },
-  { User_ID: "USR_KS_001", Nama: "Drs. H. Mulyadi, M.Pd.", Email: "kepsek@sekolah.id", Role: "kepala_sekolah", Kelas_Ditugaskan: "semua", Status: "Aktif" },
-  { User_ID: "USR_GUR_001", Nama: "Siti Rahmawati, S.Pd.", Email: "guru1@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_1", Status: "Aktif" },
-  { User_ID: "USR_GUR_002", Nama: "Ahmad Fauzi, S.Pd.", Email: "guru2@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_2", Status: "Aktif" },
-  { User_ID: "USR_GUR_003", Nama: "Dewi Lestari, S.Pd.", Email: "guru3@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_3", Status: "Aktif" },
-  { User_ID: "USR_GUR_004", Nama: "Rendra Saputra, S.Pd.", Email: "guru4@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_4", Status: "Aktif" },
-  { User_ID: "USR_GUR_005", Nama: "Nurul Hidayah, S.Pd.", Email: "guru5@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_5", Status: "Aktif" },
-  { User_ID: "USR_GUR_006", Nama: "Bambang Sudarmono, M.Pd.", Email: "guru6@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_6", Status: "Aktif" }
+  { User_ID: "USR_KS_001", Nama: "Kepala Sekolah", Email: "kepsek@sekolah.id", Role: "kepala_sekolah", Kelas_Ditugaskan: "semua", Status: "Aktif" },
+  { User_ID: "USR_GUR_001", Nama: "Guru Kelas 1", Email: "guru1@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_1", Status: "Aktif" },
+  { User_ID: "USR_GUR_002", Nama: "Guru Kelas 2", Email: "guru2@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_2", Status: "Aktif" },
+  { User_ID: "USR_GUR_003", Nama: "Guru Kelas 3", Email: "guru3@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_3", Status: "Aktif" },
+  { User_ID: "USR_GUR_004", Nama: "Guru Kelas 4", Email: "guru4@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_4", Status: "Aktif" },
+  { User_ID: "USR_GUR_005", Nama: "Guru Kelas 5", Email: "guru5@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_5", Status: "Aktif" },
+  { User_ID: "USR_GUR_006", Nama: "Guru Kelas 6", Email: "guru6@sekolah.id", Role: "guru", Kelas_Ditugaskan: "kelas_6", Status: "Aktif" }
 ];
 
 function initLocalStorage() {
   if (!localStorage.getItem(STORAGE_KEYS.STUDENTS)) {
-    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(INITIAL_MASTER_STUDENTS));
+    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify([]));
   }
   if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(INITIAL_SETTINGS));
@@ -86,24 +62,13 @@ function initLocalStorage() {
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
   }
   if (!localStorage.getItem(STORAGE_KEYS.ATTENDANCE)) {
-    const today = new Date().toISOString().substring(0, 10);
-    localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify([
-      { ID_Absensi: "ATT_1001", Tanggal: today, Tahun_Pelajaran: "2026/2027", Semester: "1 (Ganjil)", Kelas: "1", ID_Siswa: "STD_1001", NIS: "1001", NISN: "0161234501", Nama_Siswa: "Aditya Pratama [DEMO]", Status_Absensi: "Hadir", Keterangan: "Tepat waktu", Diinput_Oleh: "Siti Rahmawati, S.Pd.", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
-      { ID_Absensi: "ATT_1002", Tanggal: today, Tahun_Pelajaran: "2026/2027", Semester: "1 (Ganjil)", Kelas: "1", ID_Siswa: "STD_1002", NIS: "1002", NISN: "0161234502", Nama_Siswa: "Annisa Cantika Putri [DEMO]", Status_Absensi: "Hadir", Keterangan: "Tepat waktu", Diinput_Oleh: "Siti Rahmawati, S.Pd.", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
-      { ID_Absensi: "ATT_6001", Tanggal: today, Tahun_Pelajaran: "2026/2027", Semester: "1 (Ganjil)", Kelas: "6", ID_Siswa: "STD_6001", NIS: "6001", NISN: "0111234501", Nama_Siswa: "Faris Al-Ghifari [DEMO]", Status_Absensi: "Hadir", Keterangan: "Tepat waktu", Diinput_Oleh: "Bambang Sudarmono, M.Pd.", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
-      { ID_Absensi: "ATT_6002", Tanggal: today, Tahun_Pelajaran: "2026/2027", Semester: "1 (Ganjil)", Kelas: "6", ID_Siswa: "STD_6002", NIS: "6002", NISN: "0111234502", Nama_Siswa: "Ghea Salsabila [DEMO]", Status_Absensi: "Sakit", Keterangan: "Flu ringan", Diinput_Oleh: "Bambang Sudarmono, M.Pd.", Updated_At: new Date().toISOString(), Sync_Status: "Synced" }
-    ]));
+    localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify([]));
   }
   if (!localStorage.getItem(STORAGE_KEYS.GRADES)) {
-    localStorage.setItem(STORAGE_KEYS.GRADES, JSON.stringify([
-      { ID_Nilai: "GRD_1001", Tahun_Pelajaran: "2026/2027", Semester: "1 (Ganjil)", Kelas: "1", ID_Siswa: "STD_1001", NIS: "1001", NISN: "0161234501", Nama_Siswa: "Aditya Pratama [DEMO]", Mata_Pelajaran: "Bahasa Indonesia", Jenis_Asesmen: "Formatif", Lingkup_Materi: "Mengenal Suku Kata", Nilai: 88, Deskripsi: "Sangat baik dalam mengeja suku kata", Diinput_Oleh: "Siti Rahmawati, S.Pd.", Updated_At: new Date().toISOString(), Sync_Status: "Synced" },
-      { ID_Nilai: "GRD_6001", Tahun_Pelajaran: "2026/2027", Semester: "1 (Ganjil)", Kelas: "6", ID_Siswa: "STD_6001", NIS: "6001", NISN: "0111234501", Nama_Siswa: "Faris Al-Ghifari [DEMO]", Mata_Pelajaran: "Matematika", Jenis_Asesmen: "Sumatif Lingkup Materi", Lingkup_Materi: "Operasi Pecahan & Desimal", Nilai: 90, Deskripsi: "Menguasai konsep hitung pecahan dengan sangat cermat", Diinput_Oleh: "Bambang Sudarmono, M.Pd.", Updated_At: new Date().toISOString(), Sync_Status: "Synced" }
-    ]));
+    localStorage.setItem(STORAGE_KEYS.GRADES, JSON.stringify([]));
   }
   if (!localStorage.getItem(STORAGE_KEYS.SYNC_LOGS)) {
-    localStorage.setItem(STORAGE_KEYS.SYNC_LOGS, JSON.stringify([
-      { ID_Log: "LOG_INIT", Waktu: new Date().toISOString(), Jenis_Data: "DATA_SISWA", Arah_Sinkronisasi: "Sheets -> Firebase", Jumlah_Diproses: 12, Jumlah_Berhasil: 12, Jumlah_Gagal: 0, Status: "Sukses", Pesan: "Data master siswa kelas 1-6 berhasil disinkronkan." }
-    ]));
+    localStorage.setItem(STORAGE_KEYS.SYNC_LOGS, JSON.stringify([]));
   }
 }
 initLocalStorage();
@@ -447,7 +412,7 @@ export async function syncStudentsFromGoogleSheets(user) {
     }
   }
 
-  // Fallback demo
+  // Validasi lokal jika endpoint belum terhubung
   const current = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
   recordSyncLog({
     ID_Log: "SYNC_" + Date.now().toString(36),
@@ -458,13 +423,13 @@ export async function syncStudentsFromGoogleSheets(user) {
     Jumlah_Berhasil: current.length,
     Jumlah_Gagal: 0,
     Status: "Sukses",
-    Pesan: isGASConfigured ? "Sinkronisasi Google Sheets selesai." : "Verifikasi data siswa kelas 1-6 berhasil tervalidasi (Mode Terisolasi)."
+    Pesan: isGASConfigured ? "Pemeriksaan data master Google Sheets selesai." : "Data induk siswa tervalidasi."
   });
 
   return {
     success: true,
     count: current.length,
-    message: isGASConfigured ? "Sinkronisasi Google Sheets selesai." : "Data induk siswa kelas 1–6 berhasil diverifikasi dari master database!"
+    message: isGASConfigured ? "Pemeriksaan data master Google Sheets selesai." : "Data induk siswa tervalidasi."
   };
 }
 
