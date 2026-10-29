@@ -1,0 +1,20 @@
+{
+  "name": "sistem-informasi-absensi-penilaian-sd",
+  "version": "1.0.0",
+  "description": "Sistem Informasi Absensi dan Penilaian Siswa SD Kelas 1 dan Kelas 6 (PWA, Google Sheets, Firestore, Google Drive)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node tests/verify-all.js"
+  },
+  "dependencies": {
+    "firebase": "^10.12.0"
+  },
+  "devDependencies": {
+    "vite": "^5.2.0"
+  },
+  "author": "Antigravity Development Team",
+  "license": "MIT"
+}

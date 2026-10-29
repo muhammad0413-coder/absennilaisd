@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+  </defs>
+  <!-- Background with rounded edges -->
+  <rect width="192" height="192" rx="36" fill="url(#primaryGrad)"/>
+  
+  <!-- Graduation / School Emblem -->
+  <path d="M96 42 L150 72 L96 102 L42 72 Z" fill="#ffffff" />
+  <path d="M60 85 L60 115 Q96 138 132 115 L132 85 Q96 108 60 85 Z" fill="#e0f2fe" />
+  
+  <!-- Ribbon / Tassel -->
+  <path d="M140 78 L146 122 L138 122 Z" fill="#fbbf24" />
+  <circle cx="142" cy="125" r="4" fill="#f59e0b" />
+  
+  <!-- Checkmark / Grade Accent -->
+  <circle cx="96" cy="142" r="18" fill="#10b981" />
+  <path d="M89 142 L94 147 L104 137" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
