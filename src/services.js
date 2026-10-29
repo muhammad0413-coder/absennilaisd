@@ -846,8 +846,29 @@ export async function updateSettings(user, newSettings) {
 }
 
 export async function getUsers() {
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || 'null');
-  if (Array.isArray(saved) && saved.length > 0) return saved;
+  let saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || 'null');
+  if (Array.isArray(saved) && saved.length > 0) {
+    // Bersihkan duplikasi jika sebelumnya ter-overwrite foto admin ke semua guru
+    const adminUser = saved.find(u => u.Role === 'admin' || (u.Email && u.Email.toLowerCase() === 'admin@sekolah.id'));
+    const adminPhoto = adminUser?.Foto;
+    
+    // Periksa apakah foto admin terduplikasi ke banyak guru
+    if (adminPhoto) {
+      const dupCount = saved.filter(u => (u.Role === 'guru' || !u.Role) && u.Foto === adminPhoto).length;
+      if (dupCount > 1) {
+        for (const u of saved) {
+          if ((u.Role === 'guru' || !u.Role) && u.Foto === adminPhoto) {
+            const init = INITIAL_USERS.find(i => i.Kelas_Ditugaskan === u.Kelas_Ditugaskan);
+            if (init) {
+              u.Foto = init.Foto;
+            }
+          }
+        }
+        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(saved));
+      }
+    }
+    return saved;
+  }
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
   return INITIAL_USERS;
 }
@@ -856,31 +877,40 @@ export async function saveUser(adminUser, userData) {
   const users = await getUsers();
   const idx = users.findIndex(u => u.Email === userData.Email || u.User_ID === userData.User_ID);
   if (idx >= 0) {
-    users[idx] = { ...users[idx], ...userData };
+    users[idx] = { 
+      ...users[idx], 
+      ...userData,
+      Foto: userData.Foto || users[idx].Foto,
+      Updated_At: new Date().toISOString()
+    };
   } else {
     users.push({
       User_ID: "USR_" + Date.now().toString(36),
       Nama: userData.Nama,
       Email: userData.Email,
-      Role: userData.Role,
+      NIP: userData.NIP || "",
+      Role: userData.Role || "guru",
       Kelas_Ditugaskan: userData.Kelas_Ditugaskan || "semua",
+      Foto: userData.Foto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces",
       Status: "Aktif",
       Updated_At: new Date().toISOString()
     });
   }
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
 
-  const activeUser = JSON.parse(localStorage.getItem('sd_auth_user') || 'null');
+  const activeUser = JSON.parse(localStorage.getItem('sd_active_user_session') || 'null');
   if (activeUser && (activeUser.uid === userData.User_ID || activeUser.email === userData.Email)) {
     const updatedActive = {
       ...activeUser,
       displayName: userData.Nama || activeUser.displayName,
       email: userData.Email || activeUser.email,
       nip: userData.NIP || activeUser.nip,
-      kelas_id: userData.Kelas_Ditugaskan || activeUser.kelas_id
+      kelas_id: userData.Kelas_Ditugaskan || activeUser.kelas_id,
+      Foto: userData.Foto || activeUser.Foto,
+      foto: userData.Foto || activeUser.foto
     };
-    localStorage.setItem('sd_auth_user', JSON.stringify(updatedActive));
+    localStorage.setItem('sd_active_user_session', JSON.stringify(updatedActive));
   }
 
-  return { success: true, message: "Data pengguna berhasil diperbarui!" };
+  return { success: true, message: `Berhasil menyimpan data pengguna ${userData.Nama}!` };
 }

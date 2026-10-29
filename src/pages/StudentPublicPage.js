@@ -22,17 +22,13 @@ export async function renderStudentPublicPage() {
   const settings = await getSettings();
   const schoolName = settings.nama_sekolah || "SDN KESILIR 02";
   const users = await getUsers();
-  const customGlobalPhoto = localStorage.getItem('sd_custom_teacher_photo');
-  const customUser = users.find(u => u.Foto && !u.Foto.includes('unsplash.com'));
 
-  // 6 Kartu Kelas lengkap dengan Foto Profil & Identitas Wali Kelas masing-masing
+  // 6 Kartu Kelas lengkap dengan Foto Profil & Identitas Wali Kelas masing-masing (Mandiri, tidak ganda)
   const classCardsHtml = [1, 2, 3, 4, 5, 6].map(num => {
     const classKey = `kelas_${num}`;
     const teacher = users.find(u => u.Kelas_Ditugaskan === classKey);
-    const teacherName = teacher?.Nama || (customUser && customUser.Kelas_Ditugaskan === 'semua' ? customUser.Nama : (num === 1 ? 'Suci Ayu Ningrum, S.Pd.' : (num === 5 ? 'Dra. Ratna Suminar' : `Guru Kelas ${num}`)));
-    const teacherPhoto = (teacher?.Foto && !teacher.Foto.includes('unsplash.com'))
-      ? teacher.Foto
-      : (customGlobalPhoto || customUser?.Foto || teacher?.Foto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces");
+    const teacherName = teacher?.Nama || (num === 1 ? 'Suci Ayu Ningrum, S.Pd.' : (num === 5 ? 'Dra. Ratna Suminar' : `Guru Kelas ${num}`));
+    const teacherPhoto = teacher?.Foto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces";
 
     return `
       <div class="card btn-class-choice" data-class="${classKey}" style="cursor: pointer; text-align: center; padding: 1.25rem 1rem; border-radius: 14px; border: 2px solid #e2e8f0; transition: all 0.25s; position: relative; background: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);" onmouseover="this.style.borderColor='#1e3a8a'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 10px 15px -3px rgba(30,58,138,0.15)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.transform='none'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.05)';">
@@ -341,14 +337,10 @@ export function attachStudentPublicEvents() {
     const users = await getUsers();
 
     // Data Wali Kelas (NIP dirahasiakan di layar, tetapi tampil saat dicetak)
-    const customGlobalPhoto = localStorage.getItem('sd_custom_teacher_photo');
-    const customUser = users.find(u => u.Foto && !u.Foto.includes('unsplash.com'));
     const teacherAccount = users.find(u => u.Kelas_Ditugaskan === activeClass);
-    const teacherName = teacherAccount?.Nama || (customUser && customUser.Kelas_Ditugaskan === 'semua' ? customUser.Nama : (classNum === '1' ? 'Suci Ayu Ningrum, S.Pd.' : (classNum === '5' ? 'Dra. Ratna Suminar' : `Guru Kelas ${classNum}`)));
+    const teacherName = teacherAccount?.Nama || (classNum === '1' ? 'Suci Ayu Ningrum, S.Pd.' : (classNum === '5' ? 'Dra. Ratna Suminar' : `Guru Kelas ${classNum}`));
     const teacherNip = teacherAccount?.NIP || (classNum === '1' ? '199410142023212000' : (classNum === '5' ? '195701201992032001' : '-'));
-    const teacherPhoto = (teacherAccount?.Foto && !teacherAccount.Foto.includes('unsplash.com'))
-      ? teacherAccount.Foto
-      : (customGlobalPhoto || customUser?.Foto || teacherAccount?.Foto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces");
+    const teacherPhoto = teacherAccount?.Foto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces";
 
     // Update kartu wali kelas terpilih
     if (selectedTeacherPhoto) {

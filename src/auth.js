@@ -183,7 +183,7 @@ export async function loginWithEmailOnly(email) {
   return currentUser;
 }
 
-function safeLocalStorageSet(key, value) {
+export function safeLocalStorageSet(key, value) {
   try {
     localStorage.setItem(key, value);
   } catch (err) {
@@ -200,6 +200,47 @@ function safeLocalStorageSet(key, value) {
       console.error("Storage error:", err);
     }
   }
+}
+
+/**
+ * Perbarui Profil Pengguna Tertentu (Wali Kelas 1-6, Admin, Kepsek) Secara Mandiri (Tidak Ganda)
+ */
+export async function updateUserAccountProfile(targetEmail, updatedData = {}) {
+  const users = JSON.parse(localStorage.getItem('sd_users_accounts') || '[]');
+  const cleanEmail = (targetEmail || '').toLowerCase();
+  const idx = users.findIndex(u => (u.Email || '').toLowerCase() === cleanEmail);
+
+  if (idx >= 0) {
+    users[idx] = {
+      ...users[idx],
+      Nama: updatedData.Nama !== undefined ? updatedData.Nama.trim() : users[idx].Nama,
+      Email: updatedData.Email !== undefined ? updatedData.Email.trim().toLowerCase() : users[idx].Email,
+      NIP: updatedData.NIP !== undefined ? updatedData.NIP.trim() : users[idx].NIP,
+      Phone: updatedData.Phone !== undefined ? updatedData.Phone.trim() : users[idx].Phone,
+      Foto: updatedData.Foto !== undefined ? updatedData.Foto.trim() : users[idx].Foto,
+      Kelas_Ditugaskan: updatedData.Kelas_Ditugaskan || users[idx].Kelas_Ditugaskan,
+      Updated_At: new Date().toISOString()
+    };
+    safeLocalStorageSet('sd_users_accounts', JSON.stringify(users));
+
+    // Jika yang diedit adalah akun yang sedang aktif login, perbarui sesi aktif
+    if (currentUser && (currentUser.email || '').toLowerCase() === cleanEmail) {
+      currentUser = {
+        ...currentUser,
+        displayName: users[idx].Nama,
+        email: users[idx].Email,
+        nip: users[idx].NIP,
+        phone: users[idx].Phone,
+        Foto: users[idx].Foto,
+        foto: users[idx].Foto,
+        kelas_id: users[idx].Kelas_Ditugaskan
+      };
+      safeLocalStorageSet(AUTH_USER_KEY, JSON.stringify(currentUser));
+      notifyAuthChanged();
+    }
+    return users[idx];
+  }
+  return null;
 }
 
 /**
@@ -226,12 +267,7 @@ export async function updateCurrentUserProfile(updatedData = {}) {
   // 1. Simpan sesi aktif ke localStorage secara aman
   safeLocalStorageSet(AUTH_USER_KEY, JSON.stringify(currentUser));
 
-  // Simpan foto kustom global agar terbaca di portal siswa
-  if (currentUser.Foto && !currentUser.Foto.includes('unsplash.com')) {
-    safeLocalStorageSet('sd_custom_teacher_photo', currentUser.Foto);
-  }
-
-  // 2. Perbarui juga di daftar master akun pengguna (sd_users_accounts)
+  // 2. Perbarui HANYA akun yang bersangkutan di daftar master akun pengguna (sd_users_accounts)
   try {
     const users = JSON.parse(localStorage.getItem('sd_users_accounts') || '[]');
     const idx = users.findIndex(u => (u.Email || '').toLowerCase() === oldEmail || u.User_ID === currentUser.uid);
@@ -259,20 +295,6 @@ export async function updateCurrentUserProfile(updatedData = {}) {
         Status: "Aktif",
         Updated_At: new Date().toISOString()
       });
-    }
-
-    // Jika pengguna memilih kelas tertentu atau semua kelas, sinkronkan foto ke Wali Kelas di web siswa
-    if (currentUser.Foto && !currentUser.Foto.includes('unsplash.com')) {
-      for (const u of users) {
-        if (currentUser.kelas_id === 'semua' || !currentUser.kelas_id) {
-          if (!u.Foto || u.Foto.includes('unsplash.com')) {
-            u.Foto = currentUser.Foto;
-          }
-        } else if (u.Kelas_Ditugaskan === currentUser.kelas_id) {
-          u.Foto = currentUser.Foto;
-          u.Nama = currentUser.displayName;
-        }
-      }
     }
 
     safeLocalStorageSet('sd_users_accounts', JSON.stringify(users));

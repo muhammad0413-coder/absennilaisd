@@ -114,6 +114,21 @@ export function attachUsersEvents() {
           </div>
           <form id="form-save-user" onsubmit="return false;">
             <div class="modal-body">
+              <!-- Foto Profil Guru / Pengguna -->
+              <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; background: #f8fafc; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #e2e8f0;">
+                <img id="u-photo-preview" src="${userToEdit?.Foto || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces'}" alt="Foto" style="width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid #1e3a8a;">
+                <div style="flex: 1;">
+                  <label class="btn btn-outline btn-sm" style="cursor: pointer; font-size: 0.78rem; font-weight: 600;">
+                    📷 Unggah Foto Kelas Ini
+                    <input type="file" id="u-photo-file" accept="image/*" style="display: none;">
+                  </label>
+                  <input type="hidden" id="u-photo-val" value="${userToEdit?.Foto || ''}">
+                  <span style="font-size: 0.72rem; color: #64748b; display: block; margin-top: 3px;">
+                    Foto ini khusus untuk kelas ini (tidak ganda ke kelas lain).
+                  </span>
+                </div>
+              </div>
+
               <div class="form-group">
                 <label class="form-label">Nama Lengkap &amp; Gelar *</label>
                 <input type="text" id="u-name" class="form-input" required placeholder="Contoh: Siti Rahmawati, S.Pd." value="${userToEdit ? userToEdit.Nama : ''}">
@@ -167,6 +182,37 @@ export function attachUsersEvents() {
     document.getElementById('btn-close-u-modal').onclick = closeModal;
     document.getElementById('btn-cancel-u').onclick = closeModal;
 
+    const uPhotoFile = document.getElementById('u-photo-file');
+    const uPhotoPreview = document.getElementById('u-photo-preview');
+    const uPhotoVal = document.getElementById('u-photo-val');
+
+    if (uPhotoFile) {
+      uPhotoFile.onchange = (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            let w = img.width, h = img.height;
+            const maxDim = 250;
+            if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+            else if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+            if (uPhotoPreview) uPhotoPreview.src = dataUrl;
+            if (uPhotoVal) uPhotoVal.value = dataUrl;
+            toast.info("Foto profil berhasil dipilih!");
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+    }
+
     document.getElementById('form-save-user').onsubmit = async () => {
       const payload = {
         User_ID: userToEdit ? userToEdit.User_ID : null,
@@ -175,6 +221,7 @@ export function attachUsersEvents() {
         NIP: document.getElementById('u-nip').value.trim(),
         Role: document.getElementById('u-role').value,
         Kelas_Ditugaskan: document.getElementById('u-class').value,
+        Foto: uPhotoVal ? uPhotoVal.value : '',
         Status: "Aktif"
       };
 
