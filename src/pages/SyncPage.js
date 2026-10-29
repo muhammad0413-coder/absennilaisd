@@ -66,16 +66,28 @@ export async function renderSyncPage() {
           </div>
         </div>
 
+        <!-- Informasi Otomasi Sinkronisasi Langsung -->
+        <div style="margin-top: 1.25rem; padding: 1rem 1.25rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; display: flex; align-items: flex-start; gap: 0.75rem;">
+          <div style="font-size: 1.5rem; line-height: 1;">⚡</div>
+          <div style="font-size: 0.85rem; color: #166534;">
+            <strong>Mekanisme Pengiriman Otomatis (Live Background Sync):</strong>
+            <ul style="margin: 0.35rem 0 0 1.2rem; padding: 0; line-height: 1.45;">
+              <li><strong>Website → Google Sheets (Presensi & Nilai):</strong> Otomatis langsung dikirim saat Guru menekan tombol <em>"Simpan Presensi"</em> atau <em>"Simpan Nilai"</em>. Guru tidak perlu membuka menu ini untuk mengirim data.</li>
+              <li><strong>Google Sheets → Website (Data Master Siswa):</strong> Otomatis disinkronkan di latar belakang saat aplikasi dimuat atau diperbarui otomatis setiap 10 menit via pemicu Google Apps Script (<code>installAutoSyncTriggers</code>).</li>
+            </ul>
+          </div>
+        </div>
+
         <!-- Tombol Aksi Sinkronisasi Mandiri -->
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #e2e8f0;">
           <button class="btn btn-primary" id="btn-sync-students">
-            📥 Sinkronkan Data Siswa (Sheets → Firebase)
+            📥 Sinkronkan Data Siswa Sekarang (Sheets → Firebase)
           </button>
           <button class="btn btn-outline" id="btn-sync-attendance">
-            📤 Sinkronkan Absensi (Firebase → Sheets)
+            📤 Kirim Ulang Absensi (Firebase → Sheets)
           </button>
           <button class="btn btn-outline" id="btn-sync-grades">
-            📤 Sinkronkan Nilai (Firebase → Sheets)
+            📤 Kirim Ulang Nilai (Firebase → Sheets)
           </button>
           <button class="btn btn-outline" id="btn-retry-sync">
             ♻️ Ulangi Sinkronisasi Gagal

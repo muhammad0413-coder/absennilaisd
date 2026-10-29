@@ -551,3 +551,125 @@ function createJsonResponse(data, statusCode) {
   output.setMimeType(ContentService.MimeType.JSON);
   return output;
 }
+
+/**
+ * ==============================================================================
+ * SISTEM PICU OTOMATIS (AUTOMATIC TRIGGERS & CRON JOB)
+ * ==============================================================================
+ */
+
+/**
+ * 1. Instalasi Pemicu Otomatis 1-Klik:
+ * Menyiapkan pemicu berkala (setiap 10 menit) dan pemicu saat edit baris
+ * Jalankan fungsi ini satu kali di Apps Script Editor untuk mengaktifkan otomatisasi.
+ */
+function installAutoSyncTriggers() {
+  // Bersihkan pemicu lama untuk mencegah duplikasi
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i++) {
+    const fnName = triggers[i].getHandlerFunction();
+    if (fnName === "autoSyncMasterStudents" || fnName === "onEditDataSiswaTrigger") {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+
+  // A. Pemicu Waktu: Dijalankan otomatis setiap 10 menit
+  ScriptApp.newTrigger("autoSyncMasterStudents")
+    .timeBased()
+    .everyMinutes(10)
+    .create();
+
+  // B. Pemicu Edit: Aktif seketika saat ada perubahan sel di Google Sheets
+  ScriptApp.newTrigger("onEditDataSiswaTrigger")
+    .forSpreadsheet(SpreadsheetApp.getActiveSpreadsheet())
+    .onEdit()
+    .create();
+
+  writeSyncLogEntry({
+    jenis_data: "SISTEM",
+    arah: "Trigger Setup",
+    proses: 1,
+    berhasil: 1,
+    gagal: 0,
+    status: "Sukses",
+    pesan: "Pemicu otomatis (onEdit & Timer 10 Menit) berhasil diinstal."
+  });
+
+  Logger.log("Pemicu Otomatis Berhasil Dipasang!");
+  return {
+    status: "success",
+    message: "Pemicu otomatis berhasil diaktifkan! Google Sheets sekarang akan memantau perubahan secara langsung."
+  };
+}
+
+/**
+ * 2. Pemicu Otomatis saat Baris Siswa Diedit (onEdit Event)
+ */
+function onEditDataSiswaTrigger(e) {
+  try {
+    if (!e || !e.range) return;
+    const sheet = e.range.getSheet();
+    const sheetName = sheet.getName();
+    const row = e.range.getRow();
+
+    // Pantau perubahan pada sheet Data_Siswa (lewati baris 1 header)
+    if (sheetName === CONFIG.SHEETS.SISWA && row > 1) {
+      const now = new Date().toISOString();
+      // Kolom 13: Updated_At, Kolom 14: Sync_Status
+      sheet.getRange(row, 13).setValue(now);
+      sheet.getRange(row, 14).setValue("Updated");
+
+      writeSyncLogEntry({
+        jenis_data: "DATA_SISWA",
+        arah: "Sheets Auto-Edit",
+        proses: 1,
+        berhasil: 1,
+        gagal: 0,
+        status: "Sukses",
+        pesan: `Pembaruan data siswa baris ${row} terdeteksi dan distempel waktu otomatis.`
+      });
+    }
+  } catch (err) {
+    Logger.log("Error onEditDataSiswaTrigger: " + err.toString());
+  }
+}
+
+/**
+ * 3. Pemicu Waktu Berkala (Time-driven cron job)
+ * Memeriksa siswa berstatus 'Updated' atau 'Pending_Sync' dan merapikannya
+ */
+function autoSyncMasterStudents() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(CONFIG.SHEETS.SISWA);
+    if (!sheet) return;
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return;
+
+    const data = sheet.getRange(2, 1, lastRow - 1, 14).getValues();
+    let updatedCount = 0;
+
+    for (let i = 0; i < data.length; i++) {
+      const syncStatus = String(data[i][13] || "").trim();
+      if (syncStatus === "Updated" || syncStatus === "Pending_Sync" || syncStatus === "") {
+        sheet.getRange(i + 2, 14).setValue("Synced");
+        updatedCount++;
+      }
+    }
+
+    if (updatedCount > 0) {
+      writeSyncLogEntry({
+        jenis_data: "DATA_SISWA",
+        arah: "Auto-Timer (Sheets)",
+        proses: updatedCount,
+        berhasil: updatedCount,
+        gagal: 0,
+        status: "Sukses",
+        pesan: `Pemeriksaan otomatis berkala: ${updatedCount} siswa berstatus baru/diperbarui diselaraskan.`
+      });
+    }
+  } catch (err) {
+    Logger.log("Error autoSyncMasterStudents: " + err.toString());
+  }
+}

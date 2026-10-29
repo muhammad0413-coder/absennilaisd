@@ -9,6 +9,7 @@ import './style.css';
 import { onAuthChanged } from './auth.js';
 import { navigateTo } from './router.js';
 import { toast } from './components/Toast.js';
+import { fetchLatestStudentsIfConfigured } from './services.js';
 
 // 1. Registrasi Progressive Web App (PWA) Service Worker
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
@@ -26,6 +27,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 // 2. Monitoring Status Jaringan Online / Offline
 window.addEventListener('online', () => {
   toast.success("Koneksi internet kembali terhubung.");
+  fetchLatestStudentsIfConfigured().catch(() => {});
   navigateTo(window.location.hash);
 });
 
@@ -42,10 +44,12 @@ window.addEventListener('hashchange', () => {
 // 4. Auth State Listener
 onAuthChanged((user) => {
   // Jika sedang di halaman utama atau login, segarkan navigasi
+  fetchLatestStudentsIfConfigured().catch(() => {});
   navigateTo(window.location.hash || '#student');
 });
 
 // 5. Initial Mount
 document.addEventListener('DOMContentLoaded', () => {
+  fetchLatestStudentsIfConfigured().catch(() => {});
   navigateTo(window.location.hash || '#student');
 });

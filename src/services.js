@@ -112,10 +112,39 @@ initLocalStorage();
 // 1. DATA INDUK SISWA (HANYA DIBACA DARI HASIL SINKRONISASI GOOGLE SHEETS)
 // ==============================================================================
 
+let lastStudentsFetchTime = 0;
+const FETCH_COOLDOWN_MS = 2 * 60 * 1000; // Cooldown 2 menit agar hemat kuota GAS
+
+/**
+ * Pengambilan Otomatis di Latar Belakang dari Google Sheets
+ */
+export async function fetchLatestStudentsIfConfigured() {
+  if (!isGASConfigured) return;
+  const now = Date.now();
+  if (now - lastStudentsFetchTime < FETCH_COOLDOWN_MS) return;
+  lastStudentsFetchTime = now;
+
+  try {
+    const res = await fetch(`${GAS_API_URL}?action=getStudents`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.status === "success" && Array.isArray(data.students) && data.students.length > 0) {
+        localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(data.students));
+        console.log(`[Auto-Sync] Data siswa diperbarui otomatis dari Google Sheets (${data.students.length} siswa).`);
+      }
+    }
+  } catch (e) {
+    console.warn("[Auto-Sync] Gagal memuat data siswa terbaru di latar belakang:", e);
+  }
+}
+
 /**
  * Mengambil daftar siswa dari database (Read-only di website)
  */
 export async function getStudents(kelas = null, status = 'Aktif') {
+  // Pemicu otomatis di latar belakang jika terhubung dengan Google Sheets
+  fetchLatestStudentsIfConfigured().catch(() => {});
+
   const allStudents = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
   return allStudents.filter(s => {
     if (kelas && String(s.Kelas) !== String(kelas).replace('kelas_', '')) return false;

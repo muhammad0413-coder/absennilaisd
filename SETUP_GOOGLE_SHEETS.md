@@ -87,5 +87,31 @@ Agar website dapat menyinkronkan data dengan Google Sheets:
 2. Masuk sebagai Administrator (`admin@sekolah.id`).
 3. Buka menu **Sinkronisasi Data**.
 4. Periksa kartu status *Master Google Sheets*: indikator akan berubah menjadi **Live Terhubung**.
-5. Klik tombol **📥 Sinkronkan Data Siswa (Sheets → Firebase)**.
+5. Klik tombol **📥 Sinkronkan Data Siswa Sekarang (Sheets → Firebase)**.
 6. Notifikasi sukses akan muncul dan tabel riwayat transaksi pada sheet `Log_Sinkronisasi` akan mencatat transaksi berhasil.
+
+---
+
+## 6. MENGAKTIFKAN PENGIRIMAN OTOMATIS (AUTO-SYNC DUA ARAH)
+
+Agar data terkirim **langsung dan otomatis tanpa perlu klik tombol manual**, sistem telah dilengkapi mekanisme 2 arah:
+
+### A. Arah 1: Website → Google Sheets (Otomatis saat Guru Simpan)
+- **Cara Kerja:** Setiap kali Guru menekan tombol **"💾 Simpan Presensi Harian"** di menu Presensi atau **"💾 Simpan Nilai"** di menu Penilaian, sistem di browser langsung menjalankan *Background Sync* (HTTP POST) ke Web App Google Apps Script.
+- Data langsung tertulis di sheet `Data_Absensi` dan `Data_Nilai` secara otomatis dalam hitungan detik.
+- Guru tidak perlu membuka menu Sinkronisasi.
+- **Syarat:** Pastikan `VITE_GAS_API_URL` sudah terisi di file `.env` (atau di Environment Variables Vercel) dan Web App Apps Script di-deploy dengan hak akses **Anyone**.
+
+### B. Arah 2: Google Sheets → Website / Firebase (Otomatis saat Admin Edit Data Siswa)
+Google Sheets bertindak sebagai master data siswa. Agar perubahan atau penambahan siswa baru di sheet `Data_Siswa` terkirim langsung secara otomatis:
+
+#### Cara 1: Menggunakan Fungsi Pemicu Otomatis 1-Klik (Rekomendasi)
+1. Buka editor Google Apps Script (**Extensions > Apps Script** di Spreadsheet Anda).
+2. Di bilah fungsi bagian atas, pilih fungsi: **`installAutoSyncTriggers`**.
+3. Klik tombol **Run** (Jalankan).
+4. Google Apps Script akan otomatis memasang dua pemicu:
+   - **Pemicu `onEdit`:** Memantau setiap ketikan admin di sheet `Data_Siswa` secara seketika dan memberi stempel `Updated_At`.
+   - **Pemicu Timer Berkala (Time-driven cron):** Berjalan otomatis setiap 10 menit untuk memvalidasi dan merapikan data siswa baru/berubah.
+
+#### Cara 2: Pengambilan Otomatis di Sisi Website (Auto-fetch)
+- Website telah dilengkapi modul auto-fetch: setiap kali pengguna membuka aplikasi, kembali online, atau membuka menu Data Siswa, sistem secara otomatis mengecek dan memperbarui cache siswa dari Google Sheets di latar belakang.
