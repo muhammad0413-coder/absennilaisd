@@ -747,10 +747,19 @@ html, body {
   font-weight: 700;
 }
 
+/* NIP disembunyikan di layar untuk privasi, tetapi muncul saat dicetak */
+.print-only-nip {
+  display: none !important;
+}
+
 /* ==============================================================================
    PRINT STYLES (@media print)
    ============================================================================== */
 @media print {
+  .print-only-nip {
+    display: block !important;
+  }
+
   /* Hide UI elements */
   .sidebar, .topbar, .mobile-nav, .demo-banner, .btn, .no-print,
   .toast-container, .search-filter-box {

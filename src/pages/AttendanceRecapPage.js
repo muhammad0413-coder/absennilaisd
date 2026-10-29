@@ -147,7 +147,7 @@ export function attachAttendanceRecapEvents() {
       monthLabel = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
     }
 
-    currentAuthenticHtml = generateAttendanceMonthSheetHtml(students, allAttendance, monthLabel, settings, classLabel, user.displayName || user.email);
+    currentAuthenticHtml = generateAttendanceMonthSheetHtml(students, allAttendance, monthLabel, settings, classLabel, user.displayName || user.email, user.nip || '-');
 
     const containerAuthentic = document.getElementById('container-authentic-att-sheet');
     if (containerAuthentic) {

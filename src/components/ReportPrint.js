@@ -122,6 +122,7 @@ export function triggerPrintAuthenticLandscape(sheetHtml) {
           th, td { border: 1px solid #000; padding: 2px 3px; }
           @media print {
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-only-nip { display: block !important; }
           }
         </style>
       </head>
@@ -156,6 +157,10 @@ export function generateAttendanceMonthSheetHtml(students, attendanceList, month
   const headmaster = settings.nama_kepala_sekolah || "Abdullah Mahsar, S.Pd.";
   const nipHeadmaster = settings.nip_kepala_sekolah || "198306012014121000";
   const city = (settings.kabupaten || "Jember").replace(/KABUPATEN\s+/i, '').trim();
+
+  const cleanClassNum = String(classLabel || '1').replace(/^kelas\s*/i, '').trim();
+  const titleClassStr = `KELAS ${cleanClassNum.toUpperCase()}`;
+  const teacherClassStr = `Guru Kelas ${cleanClassNum}`;
 
   let totalS = 0, totalI = 0, totalA = 0, grandTotalKehadiran = 0;
 
@@ -207,6 +212,17 @@ export function generateAttendanceMonthSheetHtml(students, attendanceList, month
 
   return `
     <div style="font-family: 'Times New Roman', serif; color: #000; padding: 10px;">
+      <style>
+        .print-only-nip {
+          display: none !important;
+        }
+        @media print {
+          .print-only-nip {
+            display: block !important;
+          }
+        }
+      </style>
+
       <!-- KOP SURAT RESMI (LOGO KIRI & LOGO KANAN) -->
       ${renderKopSuratOfficialHtml(settings)}
 
@@ -219,7 +235,7 @@ export function generateAttendanceMonthSheetHtml(students, attendanceList, month
           TAHUN AJARAN ${year}
         </h4>
         <h4 style="font-size: 11pt; font-weight: bold; margin: 2px 0; text-transform: uppercase;">
-          KELAS ${classLabel.toUpperCase()}
+          ${titleClassStr}
         </h4>
       </div>
 
@@ -257,20 +273,20 @@ export function generateAttendanceMonthSheetHtml(students, attendanceList, month
         Prosentase Absen Bulan ini &nbsp;&nbsp;&nbsp;&nbsp;= &nbsp;${persentaseAbsen}%
       </div>
 
-      <!-- TANDA TANGAN GAMBAR 1 -->
+      <!-- TANDA TANGAN GAMBAR 1 (NIP HANYA MUNCUL KETIKA DICETAK) -->
       <div style="display: flex; justify-content: space-between; margin-top: 25px; font-size: 9.5pt;">
         <div style="width: 280px; text-align: left;">
           <p style="margin: 0;">Mengetahui,</p>
           <p style="margin: 0 0 55px 0;">Kepala Sekolah ${schoolName}</p>
           <p style="margin: 0; font-weight: bold; text-decoration: underline;">${headmaster}</p>
-          <p style="margin: 0; font-size: 8.5pt;">NIP. ${nipHeadmaster}</p>
+          <p class="print-only-nip" style="margin: 0; font-size: 8.5pt;">NIP. ${nipHeadmaster}</p>
         </div>
 
         <div style="width: 250px; text-align: left;">
           <p style="margin: 0;">${city}, ${new Intl.DateTimeFormat('id-ID', { dateStyle: 'long' }).format(new Date())}</p>
-          <p style="margin: 0 0 55px 0;">Guru Kelas ${classLabel}</p>
+          <p style="margin: 0 0 55px 0;">${teacherClassStr}</p>
           <p style="margin: 0; font-weight: bold; text-decoration: underline;">${teacherName || "( ............................................ )"}</p>
-          ${teacherNip && teacherNip !== '-' ? `<p style="margin: 0; font-size: 8.5pt;">NIP. ${teacherNip}</p>` : ''}
+          ${teacherNip && teacherNip !== '-' ? `<p class="print-only-nip" style="margin: 0; font-size: 8.5pt;">NIP. ${teacherNip}</p>` : ''}
         </div>
       </div>
     </div>
@@ -345,6 +361,17 @@ export function generateGradesSemesterSheetHtml(students, gradesList, subject, s
 
   return `
     <div style="font-family: 'Times New Roman', serif; color: #000; padding: 10px;">
+      <style>
+        .print-only-nip {
+          display: none !important;
+        }
+        @media print {
+          .print-only-nip {
+            display: block !important;
+          }
+        }
+      </style>
+
       <!-- KOP SURAT RESMI (LOGO KIRI & LOGO KANAN) -->
       ${renderKopSuratOfficialHtml(settings)}
 
@@ -409,20 +436,20 @@ export function generateGradesSemesterSheetHtml(students, gradesList, subject, s
         <em>LM = Lingkup Materi</em>
       </div>
 
-      <!-- TANDA TANGAN GAMBAR 2 -->
+      <!-- TANDA TANGAN GAMBAR 2 (NIP HANYA MUNCUL KETIKA DICETAK) -->
       <div style="display: flex; justify-content: space-between; margin-top: 20px; font-size: 9.5pt;">
         <div style="width: 280px; text-align: left;">
           <p style="margin: 0;">Mengetahui,</p>
           <p style="margin: 0 0 50px 0;">Kepala Sekolah / Kepala Madrasah</p>
           <p style="margin: 0; font-weight: bold; text-decoration: underline;">${headmaster}</p>
-          <p style="margin: 0; font-size: 8.5pt;">NIP. ${nipHeadmaster}</p>
+          <p class="print-only-nip" style="margin: 0; font-size: 8.5pt;">NIP. ${nipHeadmaster}</p>
         </div>
 
         <div style="width: 250px; text-align: left;">
           <p style="margin: 0;">${city}, ${todayStr}</p>
           <p style="margin: 0 0 50px 0;">Wali Kelas,</p>
           <p style="margin: 0; font-weight: bold; text-decoration: underline;">${teacherName || "( ............................................ )"}</p>
-          ${teacherNip && teacherNip !== '-' ? `<p style="margin: 0; font-size: 8.5pt;">NIP. ${teacherNip}</p>` : ''}
+          ${teacherNip && teacherNip !== '-' ? `<p class="print-only-nip" style="margin: 0; font-size: 8.5pt;">NIP. ${teacherNip}</p>` : ''}
         </div>
       </div>
     </div>

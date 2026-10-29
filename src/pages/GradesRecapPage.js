@@ -125,7 +125,8 @@ export function attachGradesRecapEvents() {
       sem, 
       settings, 
       classLabel, 
-      user.displayName || user.email
+      user.displayName || user.email,
+      user.nip || '-'
     );
 
     const containerAuthentic = document.getElementById('container-authentic-grades-sheet');

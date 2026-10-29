@@ -340,11 +340,12 @@ export function attachStudentPublicEvents() {
     const settings = await getSettings();
     const users = await getUsers();
 
-    // Data Wali Kelas (NIP dirahasiakan untuk perlindungan privasi guru)
+    // Data Wali Kelas (NIP dirahasiakan di layar, tetapi tampil saat dicetak)
     const customGlobalPhoto = localStorage.getItem('sd_custom_teacher_photo');
     const customUser = users.find(u => u.Foto && !u.Foto.includes('unsplash.com'));
     const teacherAccount = users.find(u => u.Kelas_Ditugaskan === activeClass);
     const teacherName = teacherAccount?.Nama || (customUser && customUser.Kelas_Ditugaskan === 'semua' ? customUser.Nama : (classNum === '1' ? 'Suci Ayu Ningrum, S.Pd.' : (classNum === '5' ? 'Dra. Ratna Suminar' : `Guru Kelas ${classNum}`)));
+    const teacherNip = teacherAccount?.NIP || (classNum === '1' ? '199410142023212000' : (classNum === '5' ? '195701201992032001' : '-'));
     const teacherPhoto = (teacherAccount?.Foto && !teacherAccount.Foto.includes('unsplash.com'))
       ? teacherAccount.Foto
       : (customGlobalPhoto || customUser?.Foto || teacherAccount?.Foto || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=250&h=250&fit=crop&crop=faces");
@@ -359,12 +360,12 @@ export function attachStudentPublicEvents() {
     if (selectedTeacherName) selectedTeacherName.textContent = teacherName;
     if (selectedTeacherRole) selectedTeacherRole.textContent = `Wali Kelas ${classNum} SDN Kesilir 02`;
 
-    // 1. Render Tabel Atas: Format Resmi Gambar 1 (Absensi 1–31 Sesuai Bulan) - NIP dikosongkan untuk privasi
-    cachedAttHtml = generateAttendanceMonthSheetHtml(students, attendance, monthText, settings, classLabel, teacherName, "", selectedYearMonth);
+    // 1. Render Tabel Atas: Format Resmi Gambar 1 (Absensi 1–31 Sesuai Bulan) - NIP disembunyikan di layar, muncul saat cetak
+    cachedAttHtml = generateAttendanceMonthSheetHtml(students, attendance, monthText, settings, classLabel, teacherName, teacherNip, selectedYearMonth);
     if (containerAtt) containerAtt.innerHTML = cachedAttHtml;
 
-    // 2. Render Tabel Bawah: Format Resmi Gambar 2 (Nilai Kurikulum Merdeka) - NIP dikosongkan untuk privasi
-    cachedGradesHtml = generateGradesSemesterSheetHtml(students, grades, selectedSubj, settings.semester_aktif || "1 (Ganjil)", settings, classLabel, teacherName, "", monthText);
+    // 2. Render Tabel Bawah: Format Resmi Gambar 2 (Nilai Kurikulum Merdeka) - NIP disembunyikan di layar, muncul saat cetak
+    cachedGradesHtml = generateGradesSemesterSheetHtml(students, grades, selectedSubj, settings.semester_aktif || "1 (Ganjil)", settings, classLabel, teacherName, teacherNip, monthText);
     if (containerGrades) containerGrades.innerHTML = cachedGradesHtml;
   };
 
