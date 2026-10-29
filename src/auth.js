@@ -97,40 +97,102 @@ export async function login(email, password) {
   return handleDemoLogin(cleanEmail, password);
 }
 
-function handleDemoLogin(email, password) {
-  // Akun Demo Pengujian Resmi
-  if (email === 'admin@sekolah.id' && password === 'admin123') {
+/**
+ * Login Guru / Staf Langsung Menggunakan Email (Tanpa Password)
+ * Sesi tersimpan permanen di perangkat pengguna sampai menekan tombol Logout.
+ */
+export async function loginWithEmailOnly(email) {
+  if (!email || !email.trim()) {
+    throw new Error("Silakan masukkan alamat email guru / staf Anda.");
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+
+  // 1. Cek di daftar akun pengguna terdaftar
+  const users = JSON.parse(localStorage.getItem('sd_users_accounts') || '[]');
+  const found = users.find(u => (u.Email || '').toLowerCase() === cleanEmail);
+
+  if (found) {
     currentUser = {
-      uid: "DEV_ADM_001",
-      email: "admin@sekolah.id",
-      displayName: "Administrator Sekolah [DEMO]",
+      uid: found.User_ID || ("USR_" + Date.now().toString(36)),
+      email: found.Email,
+      displayName: found.Nama,
+      role: found.Role,
+      kelas_id: found.Kelas_Ditugaskan || "semua"
+    };
+  } else if (cleanEmail === 'admin@sekolah.id' || cleanEmail.includes('admin')) {
+    currentUser = {
+      uid: "USR_ADM_001",
+      email: cleanEmail,
+      displayName: "Administrator Sekolah",
       role: ROLES.ADMIN,
-      kelas_id: "semua",
-      is_demo: true
+      kelas_id: "semua"
     };
-  } else if (email === 'kepsek@sekolah.id' && password === 'kepsek123') {
+  } else if (cleanEmail === 'kepsek@sekolah.id' || cleanEmail.includes('kepsek')) {
     currentUser = {
-      uid: "DEV_KS_001",
-      email: "kepsek@sekolah.id",
-      displayName: "Drs. H. Mulyadi, M.Pd. (Kepala Sekolah) [DEMO]",
+      uid: "USR_KS_001",
+      email: cleanEmail,
+      displayName: "Drs. H. Mulyadi, M.Pd. (Kepala Sekolah)",
       role: ROLES.HEADMASTER,
-      kelas_id: "semua",
-      is_demo: true
+      kelas_id: "semua"
     };
-  } else if (email.startsWith('guru') && email.endsWith('@sekolah.id') && password === 'guru123') {
+  } else if (cleanEmail.startsWith('guru') || cleanEmail.includes('guru')) {
+    const match = cleanEmail.match(/\d+/);
+    const classNum = match && ['1', '2', '3', '4', '5', '6'].includes(match[0]) ? match[0] : '1';
+    currentUser = {
+      uid: `USR_GUR_00${classNum}`,
+      email: cleanEmail,
+      displayName: `Guru Kelas ${classNum}`,
+      role: ROLES.TEACHER,
+      kelas_id: `kelas_${classNum}`
+    };
+  } else {
+    const prefix = cleanEmail.split('@')[0];
+    const nameFormatted = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+    currentUser = {
+      uid: "USR_" + Date.now().toString(36),
+      email: cleanEmail,
+      displayName: nameFormatted,
+      role: ROLES.TEACHER,
+      kelas_id: "semua"
+    };
+  }
+
+  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentUser));
+  notifyAuthChanged();
+  return currentUser;
+}
+
+function handleDemoLogin(email, password) {
+  if (email === 'admin@sekolah.id') {
+    currentUser = {
+      uid: "USR_ADM_001",
+      email: "admin@sekolah.id",
+      displayName: "Administrator Sekolah",
+      role: ROLES.ADMIN,
+      kelas_id: "semua"
+    };
+  } else if (email === 'kepsek@sekolah.id') {
+    currentUser = {
+      uid: "USR_KS_001",
+      email: "kepsek@sekolah.id",
+      displayName: "Drs. H. Mulyadi, M.Pd. (Kepala Sekolah)",
+      role: ROLES.HEADMASTER,
+      kelas_id: "semua"
+    };
+  } else if (email.startsWith('guru') && email.endsWith('@sekolah.id')) {
     const classNum = email.replace('guru', '').replace('@sekolah.id', '');
     const validNum = ['1', '2', '3', '4', '5', '6'].includes(classNum) ? classNum : '1';
     
     currentUser = {
-      uid: `DEV_GUR_00${validNum}`,
+      uid: `USR_GUR_00${validNum}`,
       email: email,
-      displayName: `Guru Kelas ${validNum} [DEMO]`,
+      displayName: `Guru Kelas ${validNum}`,
       role: ROLES.TEACHER,
-      kelas_id: `kelas_${validNum}`,
-      is_demo: true
+      kelas_id: `kelas_${validNum}`
     };
   } else {
-    throw new Error("Email atau kata sandi tidak cocok. Gunakan akun demonstrasi atau konfigurasikan Firebase.");
+    throw new Error("Email tidak terdaftar.");
   }
 
   localStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentUser));

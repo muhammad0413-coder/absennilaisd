@@ -13,6 +13,7 @@ import { toast } from './components/Toast.js';
 
 // Import Pages
 import { renderLoginPage, attachLoginEvents } from './pages/LoginPage.js';
+import { renderStudentPublicPage, attachStudentPublicEvents } from './pages/StudentPublicPage.js';
 import { renderDashboardPage } from './pages/DashboardPage.js';
 import { renderStudentsPage, attachStudentsEvents } from './pages/StudentsPage.js';
 import { renderAttendanceDailyPage, attachAttendanceDailyEvents } from './pages/AttendanceDailyPage.js';
@@ -24,27 +25,40 @@ import { renderSyncPage, attachSyncEvents } from './pages/SyncPage.js';
 import { renderUsersPage, attachUsersEvents } from './pages/UsersPage.js';
 import { renderSettingsPage, attachSettingsEvents } from './pages/SettingsPage.js';
 
-export async function navigateTo(hash = window.location.hash || '#dashboard') {
+export async function navigateTo(hash = window.location.hash || '') {
   const appContainer = document.getElementById('app');
   if (!appContainer) return;
 
   const user = getCurrentUser();
-  const cleanHash = hash.split('?')[0] || '#dashboard';
+  const cleanHash = (hash.split('?')[0] || '').trim();
 
-  // 1. Jika belum login, hanya boleh akses `#login`
+  // 1. Jika pengunjung BELUM login:
+  // Masuk langsung ke Portal Tunggal Siswa (Bisa lihat kelas 1-6 absen & nilai tanpa login)
+  // Akses masuk guru tersembunyi berupa tombol panah (➔) di pojok atas portal
   if (!user) {
-    if (cleanHash !== '#login') {
-      window.location.hash = '#login';
+    if (cleanHash === '#login') {
+      appContainer.innerHTML = renderLoginPage();
+      attachLoginEvents();
       return;
     }
-    appContainer.innerHTML = renderLoginPage();
-    attachLoginEvents();
+
+    // Default portal utama untuk publik / siswa
+    appContainer.innerHTML = await renderStudentPublicPage();
+    attachStudentPublicEvents();
     return;
   }
 
-  // 2. Jika sudah login tetapi membuka `#login`, arahkan ke `#dashboard`
-  if (cleanHash === '#login' || cleanHash === '') {
+  // 2. Jika SUDAH login:
+  // Sesi tersimpan permanen selagi tidak menekan tombol 'Keluar'
+  if (cleanHash === '' || cleanHash === '#' || cleanHash === '#login') {
     window.location.hash = '#dashboard';
+    return;
+  }
+
+  // Jika guru/staf yang sedang login ingin melihat Portal Siswa
+  if (cleanHash === '#student') {
+    appContainer.innerHTML = await renderStudentPublicPage();
+    attachStudentPublicEvents();
     return;
   }
 
@@ -142,19 +156,10 @@ export async function navigateTo(hash = window.location.hash || '#dashboard') {
       break;
   }
 
-  // Demo Banner Notice jika akun demonstrasi aktif
-  const demoBannerHtml = user?.is_demo ? `
-    <div class="demo-banner no-print">
-      <span>🧪 <strong>Mode Pengujian / Demo:</strong> Menggunakan akun (${user.email} - ${user.displayName}). Perubahan tersimpan secara interaktif.</span>
-      <span style="font-size: 0.72rem; background: rgba(0,0,0,0.08); padding: 2px 8px; border-radius: 4px;">DEMO ACTIVE</span>
-    </div>
-  ` : '';
-
   appContainer.innerHTML = `
     <div class="app-container">
       ${renderSidebar(cleanHash)}
       <div class="main-content">
-        ${demoBannerHtml}
         ${renderNavbar(pageTitle, navigator.onLine)}
         ${contentHtml}
       </div>
