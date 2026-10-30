@@ -1,123 +1,149 @@
-# PANDUAN PENGGUNA (USER GUIDE)
-# SISTEM ABSENSI DAN NILAI SISWA SD KELAS 1–6
+# BUKU PANDUAN PENGGUNA (USER GUIDE)
+## SISTEM INFORMASI ABSENSI, NILAI, DAN RAPOR SISWA SD
+
+Dokumen ini berisi petunjuk operasional langkah demi langkah bagi setiap kelompok pengguna sistem: **Administrator**, **Guru Kelas**, **Kepala Sekolah**, dan **Siswa / Orang Tua**.
 
 ---
 
-## 1. CARA MASUK (LOGIN)
+## 1. PANDUAN ADMINISTRATOR
 
-1. Buka aplikasi di peramban web HP, tablet, atau komputer.
-2. Masukkan email dan kata sandi:
-   - **Administrator**: `admin@sekolah.id` (Akses supervisi K1–K6, sinkronisasi, pengaturan).
-   - **Kepala Sekolah**: `kepsek@sekolah.id` (Monitoring dan cetak laporan seluruh K1–K6).
-   - **Guru Kelas**: `guru1@sekolah.id` s/d `guru6@sekolah.id` (Hanya kelas yang ditugaskan).
-3. Klik tombol **Masuk ke Sistem →**.
-4. Menu sidebar akan otomatis menyesuaikan peran dan hak akses akun Anda.
+Administrator memiliki hak akses tertinggi untuk mengelola seluruh sistem sekolah.
 
----
+### 1.1 Masuk ke Sistem (Login)
+1. Buka aplikasi web di browser.
+2. Masukkan email administrator: `admin@sekolah.sch.id`.
+3. Masukkan kata sandi (atau gunakan tombol klik cepat **Administrator**).
+4. Klik tombol **Masuk ke Aplikasi**.
 
-## 2. PENGELOLAAN DATA INDUK SISWA (GOOGLE SHEETS)
+### 1.2 Mengelola Rombongan Belajar & Master Siswa
+1. Pada menu navigasi sebelah kiri, klik **Data Siswa**.
+2. Gunakan dropdown **Kelas** untuk memilih kelas 1 sampai 6, atau pilih *Semua Kelas*.
+3. Untuk menambah siswa baru:
+   - Klik tombol **+ Tambah Siswa**.
+   - Isi Nama Lengkap, NIS, NISN, Jenis Kelamin, Kelas (1–6), Tempat Lahir, Tanggal Lahir, Nama Orang Tua, dan Alamat.
+   - Klik **Simpan Data**.
+4. Untuk mengubah data: Klik ikon **Edit** (pensil kuning) pada baris siswa.
+5. Untuk mutasi / nonaktifkan: Klik ikon **Mutasi** (ikon pengguna merah), pilih status baru (*Nonaktif / Pindah / Lulus*), masukkan alasan mutasi, lalu konfirmasi.
 
-Sesuai ketentuan arsitektur keamanan:
-> **PENTING:** Website tidak menyediakan form tambah, edit, atau hapus data induk siswa. Seluruh data induk siswa dikelola satu pintu oleh Administrator melalui Google Sheets.
+### 1.3 Mengelola Akun Pengguna & Guru Kelas
+1. Klik menu **Pengguna**.
+2. Klik tombol **+ Tambah Pengguna Baru**.
+3. Masukkan Nama Lengkap & Gelar guru, Email login, NIP, Peran (**Guru Kelas**), dan **Kelas Tugas Guru** (contoh: `1` untuk Wali Kelas 1, atau `1, 2` jika mengampu dua kelas).
+4. Klik **Simpan Akun**.
 
-1. Buka Google Spreadsheet bernama **`SISTEM ABSENSI DAN NILAI SD`**.
-2. Pilih sheet **`Data_Siswa`**.
-3. Masukkan data siswa pada baris yang tersedia:
-   - `ID_Siswa`: ID unik (contoh: `STD_1001`).
-   - `NIS`: Nomor Induk Siswa (format teks agar angka 0 di depan tidak hilang).
-   - `NISN`: Nomor Induk Siswa Nasional.
-   - `Nama_Lengkap`: Nama lengkap siswa.
-   - `Jenis_Kelamin`: Laki-laki / Perempuan.
-   - `Tempat_Lahir` & `Tanggal_Lahir`: Format YYYY-MM-DD.
-   - `Nama_Orang_Tua`: Nama wali murid.
-   - `Alamat`: Alamat tempat tinggal.
-   - `Kelas`: Bernilai `1`, `2`, `3`, `4`, `5`, atau `6`.
-   - `Tahun_Pelajaran`: Contoh `2026/2027`.
-   - `Status_Siswa`: `Aktif`, `Pindah`, atau `Lulus`.
-4. Setelah data selesai diisi di Google Sheets, buka menu **Sinkronisasi Data** di website, lalu klik **📥 Sinkronkan Data Siswa (Sheets → Firebase)**.
-5. Seluruh data siswa akan langsung tampil di website pada menu **Data Siswa**.
+### 1.4 Mengatur Identitas Sekolah & Kurikulum
+1. Klik menu **Pengaturan**.
+2. Pada tab **Identitas Sekolah & Kepala Sekolah**, lengkapi:
+   - Nama Resmi Sekolah, NPSN, Alamat, Desa, Kecamatan, Kabupaten, Provinsi.
+   - Nama Kepala Sekolah dan NIP Kepala Sekolah.
+3. Pada tab **Tahun Pelajaran & Semester**, tentukan tahun ajaran aktif (contoh: `2026/2027`) dan semester aktif (*1* atau *2*).
+4. Pada tab **Mata Pelajaran**, tambah atau kelola daftar mata pelajaran kurikulum dan KKM.
+5. Pada tab **Bobot & Skala Penilaian**, tinjau bobot resmi (*Formatif 20%, Sumatif LM 30%, STS 25%, SAS 25%*).
 
----
-
-## 3. CARA MENGISI ABSENSI HARIAN (GURU KELAS)
-
-1. Masuk sebagai Guru Kelas atau Administrator.
-2. Buka menu **Absensi Harian** dari sidebar navigasi.
-3. Pilih tingkat kelas (otomatis terkunci untuk Guru Kelas).
-4. Pilih tanggal presensi (otomatis terisi hari ini).
-5. Klik **Muat Data Siswa**.
-6. Pada tabel siswa:
-   - Klik status kehadiran per siswa: **Hadir** (hijau), **Sakit** (biru), **Izin** (kuning), atau **Alpa** (merah).
-   - Gunakan tombol **✓ Hadir Semua** untuk mengatur semua siswa hadir dalam 1 detik, lalu cukup ubah siswa yang berhalangan.
-   - Tambahkan keterangan jika siswa sakit atau izin (misal: *Demam tinggi*).
-7. Klik tombol **💾 Simpan Data Presensi Siswa Sekarang**.
-8. Data langsung tersimpan di Cloud Firestore dan salinannya dikirimkan ke Google Sheets pada sheet `Data_Absensi`.
+### 1.5 Melakukan Sinkronisasi Data
+1. Klik menu **Sinkronisasi**.
+2. Periksa 4 Kartu Status (*Firebase, Google Sheets, Google Apps Script, Google Drive*).
+3. Klik **Periksa Koneksi** untuk validasi diagnostik.
+4. Klik **Sinkronkan Semua** untuk menjalankan pertukaran data dua arah menyeluruh.
+5. Jika ada antrean yang terhambat, klik **Ulangi Data Gagal**.
 
 ---
 
-## 4. CARA MELIHAT REKAP ABSENSI
+## 2. PANDUAN GURU KELAS
 
-1. Buka menu **Rekap Absensi**.
-2. Pilih kelas dan periode (Bulan atau rentang Tanggal Mulai & Selesai).
-3. Klik **Tampilkan Rekap**.
-4. Sistem menghitung rekapitulasi kehadiran menggunakan rumus resmi:
-   $$\text{Persentase Kehadiran} = \frac{\text{Jumlah Hadir}}{\text{Total Hari Pertemuan Efektif}} \times 100\%$$
-   *Catatan: Hari tanpa catatan presensi tidak otomatis dianggap alpa.*
-5. Anda dapat mengunduh rekap dalam format file spreadsheet dengan menekan **📥 Ekspor CSV** atau mencetak lembar resmi dengan menekan **🖨️ Cetak Rekap Presensi**.
+Guru kelas hanya memiliki akses pada kelas yang ditugaskan oleh Administrator.
+
+### 2.1 Mengisi Absensi Harian Siswa
+1. Masuk menggunakan akun guru (contoh: `guru1@sekolah.sch.id`).
+2. Klik menu **Absensi**.
+3. Sistem secara otomatis memilih kelas tugas Anda.
+4. Pilih tanggal pencatatan (default adalah tanggal hari ini).
+5. **Fitur Cepat:** Jika seluruh siswa hadir, klik tombol **Hadir Semua** (1-klik).
+6. Untuk siswa yang tidak hadir: Klik tombol status yang sesuai:
+   - **Sakit (S)**: Masukkan keterangan sakit jika ada surat dokter.
+   - **Izin (I)**: Masukkan keterangan keperluan izin.
+   - **Alpa (A)**: Jika tidak ada pemberitahuan dari orang tua.
+7. Klik tombol **Simpan Absensi**. Sistem akan menyimpan ke database dan memperbarui indikator menjadi *Sudah Tersimpan di Database*.
+8. Untuk mencetak daftar hadir kelas harian: Klik tombol **Cetak A4**.
+
+### 2.2 Melihat Rekapitulasi Absensi
+1. Klik menu **Rekap Absensi**.
+2. Pilih mode periode: **Semester**, **Bulanan**, atau **Rentang Tanggal**.
+3. Sistem otomatis menghitung total hari belajar aktif, persentase kehadiran:
+   $$\text{Persentase Kehadiran} = \frac{\text{Jumlah Hadir}}{\text{Total Hari Efektif}} \times 100\%$$
+   *(Hari tanpa catatan tidak pernah dihitung sebagai alpa)*.
+4. Anda dapat mengunduh rekap dalam format **Excel (.xlsx)** atau **CSV**, serta mencetak langsung via **Cetak A4**.
+
+### 2.3 Menginput Nilai Asesmen
+1. Klik menu **Input Nilai**.
+2. Pilih parameter penilaian:
+   - **Mata Pelajaran** (contoh: *Matematika*).
+   - **Jenis Asesmen**: *Formatif*, *Sumatif Lingkup Materi*, *Sumatif Tengah Semester (STS)*, atau *Sumatif Akhir Semester (SAS)*.
+   - **Lingkup Materi / Bab**: Tulis topik (contoh: *Bab 1 Bilangan Cacah*).
+   - **Semester**: *Semester 1* atau *Semester 2*.
+3. Masukkan angka nilai pada kolom **Nilai (0–100)**.
+4. Klik tombol **Deskripsi Otomatis** untuk menghasilkan narasi capaian kompetensi otomatis berdasarkan skala skor yang diisi. Anda juga dapat menyunting deskripsi secara manual.
+5. Klik **Simpan Semua Nilai**.
+
+### 2.4 Memeriksa Rekap Nilai & Leger
+1. Klik menu **Rekap Nilai**.
+2. Pilih mata pelajaran dan semester yang ingin dianalisis.
+3. Tinjau nilai masing-masing komponen asesmen, Nilai Akhir (NA), dan Predikat (A/B/C/D).
+4. Klik **Excel** atau **Cetak A4** untuk arsip fisik nilai.
+
+### 2.5 Mengelola dan Mencetak Rapor Siswa
+1. Klik menu **Rapor Siswa**.
+2. Pilih semester aktif.
+3. Gunakan navigasi panah (*Siswa Sebelumnya / Siswa Selanjutnya*) untuk meninjau rapor masing-masing anak.
+4. Isi atau sesuaikan **Catatan Wali Kelas** pada kotak teks yang disediakan.
+5. **Opsi Cetak:**
+   - Klik **Cetak Siswa Ini** untuk mencetak rapor 1 siswa.
+   - Klik **Cetak 1 Kelas** untuk mencetak seluruh buku rapor siswa dalam satu kelas sekaligus dengan jeda halaman rapi (*page break* otomatis).
+6. Klik **Arsip ke Drive** untuk menyimpan salinan dokumen ke Google Drive.
+
+### 2.6 Mengubah Profil Pribadi Guru
+1. Klik foto profil atau nama Anda di pojok kanan atas Header.
+2. Unggah foto profil baru dengan mengklik ikon kamera pada avatar.
+3. Ubah nama tampilan atau NIP.
+4. Jika ingin mengubah kata sandi, klik tombol **Kirim Reset** di bawah menu Ubah Kata Sandi.
+5. Klik **Simpan Perubahan**.
 
 ---
 
-## 5. CARA MENGINPUT NILAI SISWA (GURU KELAS)
+## 3. PANDUAN KEPALA SEKOLAH
 
-1. Buka menu **Input Nilai**.
-2. Pilih Kelas, Mata Pelajaran, Jenis Asesmen (*Formatif*, *Sumatif Lingkup Materi*, *Sumatif Tengah Semester*, atau *Sumatif Akhir Semester*), Semester, dan Tahun Pelajaran.
-3. Tuliskan Nama Penilaian / Lingkup Materi (misal: *Operasi Bilangan Bulat*).
-4. Klik **Muat Formulir Nilai**.
-5. Masukkan nilai angka (skala valid 0–100) dan deskripsi capaian pada tabel.
-   *Catatan: Baris siswa yang belum dinilai boleh dikosongkan dan tidak akan dihitung sebagai angka nol.*
-6. Klik **💾 Simpan Seluruh Nilai ke Database & Google Sheets**.
-7. Data tersimpan di Cloud Firestore dan salinannya tercatat di Google Sheets sheet `Data_Nilai`.
+Kepala sekolah bertindak sebagai pemantau mutu akademik seluruh rombel sekolah.
 
----
+### 3.1 Memantau Dashboard Sekolah
+1. Masuk dengan akun `kepsek@sekolah.sch.id`.
+2. Pada layar Dashboard, pantau:
+   - Jumlah siswa aktif dan grafik rombel kelas 1–6.
+   - Kehadiran siswa hari ini di seluruh sekolah.
+   - Diagram persentase ketidakhadiran (Sakit, Izin, Alpa).
 
-## 6. CARA MELIHAT REKAP NILAI SISWA
-
-1. Buka menu **Rekap Nilai Siswa**.
-2. Pilih Kelas, Mata Pelajaran, dan Semester.
-3. Klik **Tampilkan Rekap**.
-4. Sistem menghitung rata-rata capaian belajar siswa dan status ketuntasan berdasarkan batas KKM (default 75).
-5. Klik **🖨️ Cetak Lembar Nilai** atau **📥 Ekspor CSV**.
+### 3.2 Memantau Ketuntasan Nilai & Kehadiran Kelas
+1. Buka menu **Rekap Absensi** dan pilih kelas yang ingin dievaluasi (Kelas 1 sampai 6).
+2. Buka menu **Rekap Nilai** untuk melihat ketercapaian nilai per mata pelajaran antar tingkat kelas.
+3. Buka menu **Cetak Laporan** untuk mencetak *Laporan Eksekutif Monitoring Sekolah*.
 
 ---
 
-## 7. PUSAT CETAK 9 LAPORAN RESMI (@media print)
+## 4. PANDUAN PORTAL SISWA & ORANG TUA
 
-Buka menu **Cetak Laporan** untuk mencetak salah satu dari 9 laporan resmi:
-1. **Daftar Siswa per Kelas**
-2. **Absensi Harian Kelas**
-3. **Rekap Absensi Bulanan**
-4. **Rekap Absensi Semester**
-5. **Daftar Nilai per Mata Pelajaran**
-6. **Rekap Nilai Siswa**
-7. **Rekap Nilai per Kelas**
-8. **Laporan Kepala Sekolah**
-9. **Laporan Tahunan / Semester**
+Portal mandiri bagi wali murid dan siswa untuk memantau hasil belajar secara transparan dari gawai/HP masing-masing.
 
-Setiap laporan otomatis menyertakan:
-- **Kop Surat Resmi Sekolah** (Nama Sekolah, NPSN, Alamat, Garis Ganda).
-- **Kolom Tanda Tangan** Kepala Sekolah dan Guru Kelas.
-- Menyembunyikan sidebar, bilah tombol, dan navigasi HP.
-- Siap dicetak langsung ke kertas **A4** atau disimpan sebagai **PDF** melalui dialog print browser.
+### 4.1 Membuka Portal
+1. Di halaman login utama, klik tombol **PORTAL SISWA / ORANG TUA** di pojok kanan atas.
+   *(Atau buka langsung tautan URL dengan parameter `?portal=true`).*
 
----
+### 4.2 Masuk ke Akun Siswa
+1. Pilih **Kelas** siswa (contoh: *Kelas 1*).
+2. Masukkan **NIS** atau **NISN** siswa (contoh: `1001` atau `0151234561`).
+3. Masukkan **PIN Pribadi / Tanggal Lahir** siswa dalam format `YYYY-MM-DD` (contoh: `2019-03-15`) atau 4 digit nomor NIS/NISN.
+4. Klik **Buka Hasil Belajar Saya**.
 
-## 8. SINKRONISASI DATA (ADMINISTRATOR)
-
-1. Buka menu **Sinkronisasi Data**.
-2. Tinjau status koneksi Google Sheets, Cloud Firestore, dan Google Drive.
-3. Klik tombol aksi sesuai kebutuhan:
-   - **📥 Sinkronkan Data Siswa**: Membaca data siswa terbaru dari Google Sheets `Data_Siswa` dan memperbarui database aplikasi.
-   - **📤 Sinkronkan Absensi**: Mengirim salinan seluruh absensi ke sheet `Data_Absensi`.
-   - **📤 Sinkronkan Nilai**: Mengirim salinan seluruh nilai ke sheet `Data_Nilai`.
-   - **♻️ Ulangi Sinkronisasi Gagal**: Memeriksa dan memproses ulang transaksi yang sempat tertunda.
-4. Riwayat transaksi tercatat transparan pada tabel log sinkronisasi.
+### 4.3 Fitur yang Dapat Dilihat Siswa
+1. **Identitas Siswa**: Nama lengkap, NIS, NISN, nama orang tua, dan rombel aktif.
+2. **Statistik Kehadiran Pribadi**: Kotak ringkasan Hadir, Sakit, Izin, Alpa, dan persentase kehadiran semester berjalan.
+3. **Capaian Nilai Mata Pelajaran**: Nilai Akhir (NA), predikat huruf, dan narasi deskripsi capaian kompetensi setiap mata pelajaran.
+4. **Cetak Mandiri**: Klik tombol **Cetak Rapor Saya** untuk mencetak atau menyimpan dokumen hasil belajar dalam bentuk file PDF.

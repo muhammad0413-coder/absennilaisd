@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased font-sans;
+  }
+}
+
+/* ==========================================================
+   PRINT CSS ENGINE: A4 Cetak Rapor & Laporan Resmi Sekolah
+   ========================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm 15mm 15mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+    line-height: 1.35;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Sembunyikan elemen non-cetak */
+  .print\\:hidden,
+  nav,
+  aside,
+  header,
+  footer,
+  button,
+  .no-print,
+  .btn-print,
+  .toast-container {
+    display: none !important;
+  }
+
+  /* Tampilkan hanya area cetak */
+  .print\\:block {
+    display: block !important;
+  }
+
+  /* Reset layout container */
+  main,
+  #root,
+  .app-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: transparent !important;
+  }
+
+  /* Penataan tabel saat cetak */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  th, td {
+    border: 1px solid #1e293b !important;
+    padding: 4px 6px !important;
+    font-size: 9.5pt !important;
+  }
+
+  th {
+    background-color: #f1f5f9 !important;
+    color: #000000 !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+  }
+
+  /* Pemutus halaman rapor siswa */
+  .page-break {
+    page-break-before: always;
+    break-before: page;
+  }
+}

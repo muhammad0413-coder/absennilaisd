@@ -1,42 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-
-  <title>Sistem Informasi Absensi dan Penilaian Siswa SDN KESILIR 02 (Kelas 1–6)</title>
-  <meta name="description" content="Aplikasi web terpadu absensi dan penilaian siswa SDN Kesilir 02 Kelas 1–6. Format resmi Kurikulum Merdeka dan Blangko Absensi.">
-  <meta name="theme-color" content="#1e3a8a">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="AbsenNilai SDN Kesilir 02">
-
-  <!-- PWA Manifest & Icons -->
-  <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="icon" type="image/png" href="/logo-kanan.png">
-  <link rel="apple-touch-icon" href="/logo-kanan.png">
-
-  <!-- Google Fonts: Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-</head>
-<body>
-  <div id="app">
-    <!-- Tampilan transisi ringan saat aplikasi pertama dimuat -->
-    <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8fafc; font-family: sans-serif; color: #1e3a8a;">
-      <div style="text-align: center;">
-        <img src="/logo-kanan.png" alt="Logo SDN Kesilir 02" style="width: 72px; height: 72px; object-fit: contain; margin-bottom: 0.75rem; border-radius: 12px;" onerror="this.style.display='none'">
-        <h2 style="font-size: 1.25rem; font-weight: 800; margin: 0; color: #1e3a8a;">SDN KESILIR 02</h2>
-        <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Sistem Absensi &amp; Nilai Siswa (Kelas 1–6)</p>
-      </div>
-    </div>
-  </div>
-
-  <script type="module" src="/src/main.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistem Informasi Absensi dan Nilai Siswa SD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-school-bg text-slate-800 antialiased font-sans">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

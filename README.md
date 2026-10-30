@@ -1,129 +1,154 @@
-# SISTEM ABSENSI DAN NILAI SISWA SD KELAS 1–6
+# Sistem Informasi Absensi, Nilai, dan Rapor Siswa SD (Kelas 1–6)
 
-Aplikasi Web Modern dan Progressive Web App (PWA) untuk Pengelolaan Absensi, Nilai, dan Pelaporan Rapor Sekolah Dasar jenjang **Kelas 1 sampai Kelas 6**.
-
----
-
-## 📌 Ringkasan Arsitektur Sistem
-
-Aplikasi ini menggunakan model pemisahan sumber data yang ketat:
-
-1. **Google Sheets sebagai Master Data Induk Siswa**:
-   - Diinput dan diperbarui secara manual oleh Administrator di spreadsheet *DATABASE SISWA SD* (`Data_Siswa`).
-   - Website **tidak menyediakan form tambah/edit/hapus** data induk siswa (read-only di website) guna menjaga integritas data satu pintu.
-   - Alur data: `Google Sheets → Google Apps Script → Firebase → Website`.
-2. **Cloud Firestore sebagai Database Operasional Realtime**:
-   - Menyimpan akun pengguna, peran akses, data presensi harian, nilai siswa, dan riwayat perubahan.
-3. **Google Sheets sebagai Salinan Laporan Arsip**:
-   - Presensi dan nilai yang dimasukkan guru melalui website disimpan ke Firebase, lalu disinkronkan salinannya ke Google Sheets (`Data_Absensi` dan `Data_Nilai`).
-   - Alur data: `Website → Firebase → Google Apps Script → Google Sheets`.
-4. **Google Drive untuk Pengarsipan Dokumen**:
-   - Struktur folder: `SISTEM SEKOLAH/ABSENSI/`, `NILAI/`, dan `LAPORAN/` per tahun pelajaran.
+Aplikasi web modern, terintegrasi, dan *production-ready* untuk pengelolaan absensi harian, penilaian asesmen (Formatif, Sumatif Lingkup Materi, STS, SAS), cetak rapor Kurikulum Merdeka, serta sinkronisasi dua arah dengan Google Sheets dan Google Drive.
 
 ---
 
-## 🛠️ Tumpukan Teknologi
+## 🌟 Fitur Utama
 
-- **Frontend**: HTML5, CSS3, JavaScript Modular ES6+, Vite.
-- **Hosting Frontend**: GitHub dan Vercel.
-- **Autentikasi**: Firebase Authentication.
-- **Database Operasional**: Cloud Firestore (dengan Firestore Security Rules).
-- **Database Master Siswa & Arsip**: Google Sheets (6 Sheet Terstruktur).
-- **Integration Backend**: Google Apps Script (`backend/Code.gs`).
-- **Penyimpanan Dokumen**: Google Drive.
+- **Multi-Peran & Hak Akses Ketat (RBAC)**:
+  - **Administrator**: Kontrol penuh data master kelas 1–6, akun pengguna, guru wali kelas, mata pelajaran, identitas sekolah, sinkronisasi Google Workspace, dan audit trail.
+  - **Guru Kelas**: Dibatasi hanya pada rombel kelas tugasnya (contoh: Guru Kelas 3 hanya dapat mengelola siswa Kelas 3). Input absensi massal ("Hadir Semua"), input nilai asesmen, pengisian catatan rapor, dan cetak laporan kelas.
+  - **Kepala Sekolah**: Pemantauan *read-only* tingkat sekolah, statistik kehadiran harian, ketuntasan input nilai antar kelas, dan cetak rekap eksekutif.
+  - **Portal Siswa / Orang Tua**: Portal publik aman dengan verifikasi Kelas + NIS/NISN + PIN/Tanggal Lahir. Bersifat *read-only* dan terisolasi murni ke data siswa bersangkutan (tidak dapat melihat siswa lain).
+- **Integrasi Penuh 4 Pilar**:
+  1. **Firebase Cloud Firestore**: Database operasional realtime cepat dan terenkripsi.
+  2. **Google Sheets**: Master data induk 9 lembar kerja (*Data_Siswa, Data_Guru, Data_Absensi, Data_Nilai, Pengaturan, Pengguna, Log_Sinkronisasi, Log_Aktivitas, Antrean_Sinkronisasi*).
+  3. **Google Apps Script**: API Router backend mandiri di folder `apps-script/` dengan `doGet`, `doPost`, LockService, dan verifikasi token.
+  4. **Google Drive**: Penyimpanan berkas arsip rapor PDF, rekap nilai, dan foto profil guru dalam folder terstruktur (*SISTEM INFORMASI SEKOLAH/...*).
+- **Mesin Cetak Standar Industri (@media print)**:
+  - Cetak otomatis format kertas A4 portrait dan landscape dengan kop surat resmi sekolah, tanda tangan kepala sekolah, dan tanda tangan wali kelas.
+  - Cetak rapor individual maupun cetak massal 1 kelas sekaligus dengan jeda halaman rapi (*page break*).
+- **Ekspor Data**:
+  - Ekspor ke berkas Excel (`.xlsx`) dan CSV dengan format UTF-8 BOM yang langsung rapi di Microsoft Excel.
 
 ---
 
-## 📂 Struktur Berkas Proyek
+## 🛠️ Arsitektur Teknologi
+
+| Komponen | Teknologi |
+|---|---|
+| Editor & AI Agent | Google Antigravity |
+| Framework Frontend | React 18 + TypeScript + Vite |
+| Desain & Styling | Tailwind CSS v3 (Tema Navy: `#0F2B5C`, Blue: `#1E40AF`, Slate `#F8FAFC`) |
+| Visualisasi Data | Recharts |
+| Ikonografi | Lucide React |
+| Autentikasi | Firebase Authentication (Email/Password) |
+| Database Operasional | Firebase Cloud Firestore |
+| Backend Eksternal | Google Apps Script (Web App Engine) |
+| Master Data Induk | Google Spreadsheet (9 Sheets) |
+| Arsip Berkas | Google Drive API |
+| Ekspor File | SheetJS (`xlsx`) & CSV Engine |
+
+---
+
+## 📂 Struktur Direktori Proyek
 
 ```text
-absen/
-├── .env.example              # Template variabel lingkungan (Client-Safe)
-├── .gitignore                # Pengecualian berkas rahasia & build
-├── index.html                # Entry point aplikasi
-├── package.json              # Dependensi Vite & Firebase
-├── vercel.json               # Konfigurasi rewrite SPA & Security Headers
-├── vite.config.js            # Konfigurasi Vite
-├── firestore.rules           # Aturan keamanan database Firestore
-├── backend/
-│   └── Code.gs               # Backend API Google Apps Script (Sheets & Drive)
+sistem-absensi-nilai-sd/
 ├── public/
-│   ├── manifest.webmanifest  # Manifest PWA (bisa diinstall di HP/Desktop)
-│   ├── sw.js                 # Service worker caching & status offline
-│   └── icons/                # Ikon PWA (192x192 & 512x512)
+│   ├── logo.svg
+│   └── assets/
 ├── src/
-│   ├── main.js               # Bootstrap aplikasi
-│   ├── style.css             # Desain sistem & style cetak (@media print)
-│   ├── firebase.js           # Inisialisasi Firebase Auth & Firestore
-│   ├── auth.js               # Pengelola sesi login & recovery
-│   ├── permissions.js        # RBAC: Aturan hak akses Admin, Kepsek, Guru K1-6
-│   ├── services.js           # Sinkronisasi data Sheets, Firestore, & Cache
-│   ├── router.js             # Client-side router & route guard
 │   ├── components/
-│   │   ├── Navbar.js         # Topbar & indikator status online
-│   │   ├── Sidebar.js        # Navigasi 10 menu sesuai peran
-│   │   ├── Toast.js          # Notifikasi pop-up
-│   │   ├── Modal.js          # Dialog konfirmasi
-│   │   └── ReportPrint.js    # Utilitas cetak kop surat resmi & ekspor CSV
-│   └── pages/
-│       ├── LoginPage.js             # Halaman login staf & guru
-│       ├── DashboardPage.js         # Dashboard statistik kelas 1–6
-│       ├── StudentsPage.js          # Data siswa read-only kelas 1–6
-│       ├── AttendanceDailyPage.js   # Input presensi harian
-│       ├── AttendanceRecapPage.js   # Rekap kehadiran & persentase
-│       ├── GradesInputPage.js       # Input nilai formatif & sumatif
-│       ├── GradesRecapPage.js       # Rekapitulasi nilai & capaian
-│       ├── ReportsPage.js           # Pusat cetak 9 laporan resmi
-│       ├── SyncPage.js              # Panel monitoring sinkronisasi data
-│       ├── UsersPage.js             # Pengguna & penugasan kelas
-│       └── SettingsPage.js          # Pengaturan kurikulum & sekolah
-├── tests/
-│   └── verify-all.js         # Automated test suite aturan sistem
-├── README.md                 # Dokumentasi umum
-├── USER_GUIDE.md             # Panduan pengguna (Admin, Guru, Kepsek)
-├── SETUP_FIREBASE.md         # Panduan instalasi Firebase
-├── SETUP_GOOGLE_SHEETS.md    # Panduan 6 sheet Google Sheets
-├── SETUP_GOOGLE_DRIVE.md     # Panduan folder arsip Google Drive
-├── DEPLOYMENT.md             # Panduan deployment GitHub & Vercel
-└── TEST_REPORT.md            # Laporan hasil pengujian 25 skenario
+│   │   └── common/           # Header, Sidebar, Modal, StatsCard, StatusBanner, ProfileModal
+│   ├── contexts/             # AuthContext, NotificationContext, SchoolContext
+│   ├── layouts/              # AppLayout
+│   ├── modules/
+│   │   ├── dashboard/        # Dynamic views (Admin, Guru, Kepsek)
+│   │   ├── students/         # Student CRUD, filters, mutation, exports
+│   │   ├── attendance/       # AttendanceDaily, AttendanceRecap
+│   │   ├── grades/           # GradeInput, GradeRecap (Formula weighted averages)
+│   │   ├── report-cards/     # ReportCardView (A4 Print layout, single/batch)
+│   │   ├── reports/          # PrintCenter (Executive school reports)
+│   │   ├── synchronization/  # 4 Pillars Status, sync triggers, retry queue
+│   │   ├── users/            # User & teacher assignment management
+│   │   ├── settings/         # School identity, subjects, weights, academic year
+│   │   └── portal/           # StudentParentPortal (Independent secure PIN login)
+│   ├── services/
+│   │   ├── firebase/         # firebase.ts, authService.ts, firestoreService.ts
+│   │   ├── apps-script/      # appsScriptApi.ts (HTTP Caller)
+│   │   ├── export/           # excelExport.ts, csvExport.ts
+│   │   └── sync/             # syncManager.ts (Two-way sync engine)
+│   ├── types/                # index.ts (Full TypeScript models & interfaces)
+│   ├── utils/                # calculations.ts, dateUtils.ts, formatters.ts
+│   ├── styles/               # index.css (Tailwind & @media print CSS)
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── vite-env.d.ts
+├── apps-script/              # Google Apps Script Project Files (14 files)
+│   ├── Code.gs
+│   ├── Config.gs
+│   ├── Authentication.gs
+│   ├── SpreadsheetService.gs
+│   ├── StudentService.gs
+│   ├── AttendanceService.gs
+│   ├── GradeService.gs
+│   ├── FirebaseService.gs
+│   ├── DriveService.gs
+│   ├── SyncService.gs
+│   ├── ValidationService.gs
+│   ├── LogService.gs
+│   ├── ApiRouter.gs
+│   └── appsscript.json
+├── firestore.rules           # Firestore Security Rules (Strict RBAC)
+├── firestore.indexes.json    # Compound indexes for Firestore
+├── .env.example              # Environment variables template
+├── .gitignore
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── README.md
+├── USER_GUIDE.md
+├── SETUP_FIREBASE.md
+├── SETUP_GOOGLE_SHEETS.md
+├── SETUP_APPS_SCRIPT.md
+├── SETUP_GOOGLE_DRIVE.md
+├── DEPLOYMENT.md
+├── SECURITY.md
+├── TEST_REPORT.md
+└── implementation_plan.md
 ```
 
 ---
 
-## 🚀 Cara Menjalankan Aplikasi Secara Lokal
+## 🚀 Panduan Memulai Cepat (Local Development)
 
-### 1. Instalasi Dependensi
+### 1. Prasyarat
+- Node.js versi 18+ atau 20+
+- npm versi 9+
+
+### 2. Instalasi Dependency
 ```bash
 npm install
 ```
 
-### 2. Konfigurasi Lingkungan
+### 3. Konfigurasi Environment Variables
 Salin file `.env.example` menjadi `.env`:
 ```bash
 cp .env.example .env
 ```
+*(Aplikasi dilengkapi dengan mode fallback demo siap uji dengan data awal siswa kelas 1–6 sehingga dapat langsung dicoba tanpa harus menunggu setup akun eksternal).*
 
-### 3. Menjalankan Server Pengembangan
+### 4. Menjalankan Server Pengembangan
 ```bash
 npm run dev
 ```
-Buka browser pada alamat `http://localhost:3000`.
+Buka browser di `http://localhost:3000`.
 
-### 4. Menjalankan Pengujian Otomatis
-```bash
-npm test
-```
-
-### 5. Menjalankan Build Produksi
+### 5. Kompilasi Produksi
 ```bash
 npm run build
 ```
 
 ---
 
-## 🧪 Akun Cepat Pengujian (Mode Demo Aktif)
+## 🔑 Akun Demo Pengujian Cepat
 
-Untuk kemudahan pengujian fitur secara langsung sebelum mengisi kredensial Firebase asli:
-- **Administrator**: `admin@sekolah.id` / `admin123` (Akses supervisi penuh seluruh K1–6).
-- **Kepala Sekolah**: `kepsek@sekolah.id` / `kepsek123` (Monitoring & Cetak Laporan seluruh K1–6).
-- **Guru Kelas 1 s/d 6**: `guru1@sekolah.id` s/d `guru6@sekolah.id` / `guru123` (Hanya kelas masing-masing).
+Pada halaman login, terdapat tombol akses cepat 1-klik untuk setiap peran:
+- **Administrator**: `admin@sekolah.sch.id` (Akses ke semua kelas & menu pengaturan)
+- **Guru Kelas 1**: `guru1@sekolah.sch.id` (Akses dibatasi hanya ke Kelas 1)
+- **Guru Kelas 3**: `guru3@sekolah.sch.id` (Akses dibatasi hanya ke Kelas 3)
+- **Kepala Sekolah**: `kepsek@sekolah.sch.id` (Akses monitoring & cetak rekap eksekutif)
+- **Kata sandi demo**: `password123` (atau klik tombol cepat pada kartu login)
+- **Portal Siswa**: Akses via tombol `PORTAL SISWA / ORANG TUA`, pilih Kelas 1, NIS `1001`, PIN: `2019-03-15` atau `1001`.

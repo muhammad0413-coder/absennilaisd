@@ -1,47 +1,63 @@
-# PANDUAN PENGARSIPAN GOOGLE DRIVE (SETUP_GOOGLE_DRIVE.md)
-# SISTEM ABSENSI DAN NILAI SISWA SD KELAS 1–6
+# PANDUAN PENGATURAN GOOGLE DRIVE (SETUP_GOOGLE_DRIVE.md)
+## SISTEM INFORMASI ABSENSI DAN NILAI SISWA SD
+
+Google Drive digunakan sebagai media penyimpanan awan (*cloud archive*) untuk foto profil guru, foto siswa, arsip rapor semester, serta salinan berkas rekap absensi dan nilai dalam format dokumen permanen.
 
 ---
 
-## 1. STRUKTUR FOLDER ARSIP RESMI
+## 1. Struktur Folder Google Drive Otomatis
 
-Sistem pengarsipan menggunakan Google Drive untuk menyimpan dokumen PDF dan laporan resmi yang diatur secara otomatis ke dalam hirarki folder berikut:
+Sistem secara otomatis membangun struktur folder teratur di Google Drive akun Anda saat fungsi inisialisasi dijalankan:
 
 ```text
-Google Drive/
-└── SISTEM SEKOLAH/
-    ├── ABSENSI/
-    │   └── 2026_2027/       # Arsip rekapitulasi presensi bulanan & semesteran
-    ├── NILAI/
-    │   └── 2026_2027/       # Arsip lembar penilaian per mapel & rapor siswa
-    └── LAPORAN/
-        └── 2026_2027/       # Arsip laporan kepala sekolah & dokumentasi akhir periode
+My Drive (Google Drive Utama)/
+└── SISTEM INFORMASI SEKOLAH/
+    ├── FOTO_GURU/              <- Foto profil guru kelas & kepala sekolah
+    ├── FOTO_SISWA/             <- Pas foto siswa rombel
+    ├── LAPORAN_ABSENSI/        <- Berkas arsip rekap absensi bulanan/semester
+    ├── LAPORAN_NILAI/          <- Berkas rekapitulasi nilai akhir & leger
+    ├── RAPOR/                  <- Arsip rapor digital per siswa
+    ├── ARSIP_SEMESTER/         <- Bundel laporan akhir semester
+    └── DOKUMEN_ADMINISTRASI/   <- SK pembagian tugas dan administrasi lain
 ```
 
 ---
 
-## 2. PEMBUATAN OTOMATIS FOLDER DRIVE
+## 2. Inisialisasi Melalui Google Apps Script
 
-Fungsi `setupDatabaseAndFolders()` di dalam file [`backend/Code.gs`](backend/Code.gs) secara otomatis membuat folder induk `SISTEM SEKOLAH` beserta subfolder kategori dan tahun pelajaran di akun Google Drive pemilik skrip saat pertama kali dijalankan.
-
-Jika Anda ingin memeriksa foldernya secara langsung:
-1. Buka [Google Drive](https://drive.google.com/).
-2. Anda akan melihat folder baru bernama **`SISTEM SEKOLAH`**.
-3. Di dalamnya terdapat subfolder `ABSENSI`, `NILAI`, dan `LAPORAN`.
-
----
-
-## 3. MEKANISME KEAMANAN BERKAS DRIVE
-
-- **Tidak Ada Akses Anonim Tanpa Izin**: Folder tidak dibuat publik untuk siapa saja di internet. Akses tulis hanya dikendalikan oleh backend Google Apps Script.
-- **Pemberian Nama Berkas yang Unik**: Setiap berkas PDF atau laporan yang diunggah diberi penamaan unik berdasarkan jenis dokumen, kelas, dan waktu ekspor (contoh: `Rekap_Presensi_Kelas1_20261029.pdf`).
-- **Pencatatan Metadata**: ID file Google Drive dan tautan pratinjau dicatat ke dalam log transaksi sistem.
+1. Pastikan Anda telah mengikuti `SETUP_APPS_SCRIPT.md`.
+2. Saat fungsi `runInitialization()` dijalankan di Apps Script, fungsi `initializeDriveFolders()` di `DriveService.gs` akan memeriksa apakah folder `SISTEM INFORMASI SEKOLAH` sudah ada di Drive Anda.
+3. Jika belum ada, folder induk beserta ke-7 subfoldernya dibuat secara otomatis.
+4. ID folder induk disimpan secara otomatis pada Script Properties dengan kunci `DRIVE_ROOT_FOLDER_ID`.
+5. Anda dapat memverifikasi dengan membuka [Google Drive](https://drive.google.com/) dan melihat folder baru bernama `SISTEM INFORMASI SEKOLAH`.
 
 ---
 
-## 4. CARA MENGUJI PENGARSIPAN DOKUMEN
+## 3. Kebijakan Keamanan dan Hak Akses Berkas Drive
 
-1. Di website aplikasi, buka menu **Cetak Laporan**.
-2. Pilih salah satu laporan (contoh: *Rekap Absensi Bulanan*).
-3. Setelah dialog cetak terbuka, Anda dapat memilih **Save as PDF** untuk menyimpan berkas secara lokal.
-4. Ketika integrasi backend Google Apps Script telah terhubung (`VITE_GAS_API_URL` terisi), fungsi `archiveDocument` di backend akan otomatis mengarsipkan dokumen ke folder Google Drive terkait.
+- **Folder Tidak Dibuat Publik**: Seluruh folder utama dan subfolder bersifat **Private** (hanya dapat diakses oleh akun Google pemilik dan backend Apps Script).
+- **Foto Profil Guru**: Saat guru mengunggah foto profil di aplikasi, berkas foto disimpan di subfolder `FOTO_GURU` dan diberi izin *Anyone with link can view* khusus untuk berkas foto tersebut agar avatar guru dapat dirender di browser, sementara folder induknya tetap terlindungi.
+- **Batas Ukuran Berkas**:
+  - Foto avatar guru/siswa: Maksimal **5 MB** (format: `.jpg`, `.png`, `.webp`).
+  - Berkas arsip rapor/dokumen: Maksimal **25 MB** (format: `.pdf`, `.xlsx`, `.html`).
+- **Resiliensi Sistem**: Jika Google Drive mengalami gangguan jaringan atau kuota penyimpanan Google Anda penuh, sistem aplikasi web akan tetap menyimpan data absensi dan nilai di Firebase Firestore dengan aman tanpa kehilangan data.
+
+---
+
+## 4. Cara Mengunggah Foto Profil Guru
+
+1. Masuk ke aplikasi web sebagai guru.
+2. Klik nama atau avatar Anda di pojok kanan atas untuk membuka jendela **Profil Pengguna Saya**.
+3. Klik ikon kamera pada lingkaran foto profil.
+4. Pilih berkas foto dari komputer atau gawai Anda.
+5. Aplikasi akan mengirimkan berkas base64 ke Google Apps Script dan menyimpannya langsung ke subfolder `FOTO_GURU` di Google Drive.
+6. Tautan foto langsung diperbarui di profil pengguna dan sheet `Data_Guru`.
+
+---
+
+## 5. Cara Mengarsipkan Rapor Siswa ke Drive
+
+1. Masuk ke aplikasi web, buka menu **Rapor Siswa**.
+2. Pilih siswa yang ingin diarsipkan.
+3. Klik tombol hijau **Arsip ke Drive**.
+4. Salinan laporan rapor lengkap dengan nilai, absensi, dan catatan wali kelas akan langsung tersimpan di subfolder `RAPOR/` di Google Drive.

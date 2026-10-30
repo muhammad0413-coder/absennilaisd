@@ -1,117 +1,102 @@
-# PANDUAN PENYIAPAN GOOGLE SHEETS & BACKEND API (SETUP_GOOGLE_SHEETS.md)
-# SISTEM ABSENSI DAN NILAI SISWA SD KELAS 1–6
+# PANDUAN PENGATURAN GOOGLE SHEETS (SETUP_GOOGLE_SHEETS.md)
+## SISTEM INFORMASI ABSENSI DAN NILAI SISWA SD
+
+Google Sheets bertindak sebagai basis data induk (*master database*), tempat administrator memasukkan data awal siswa secara massal, serta pengarsipan data historis jangka panjang.
 
 ---
 
-## 1. MEMBUAT GOOGLE SPREADSHEET UTAMA
+## 1. Membuat Spreadsheet Master
 
-1. Buka [Google Sheets](https://sheets.google.com/) menggunakan akun Google sekolah.
-2. Buat spreadsheet baru dan beri nama:
-   **`SISTEM ABSENSI DAN NILAI SD`**
+1. Buka [Google Sheets](https://sheets.google.com/).
+2. Buat Spreadsheet Baru (*Blank spreadsheet*).
+3. Beri nama spreadsheet tepat:
+   ```text
+   DATABASE SISTEM ABSENSI DAN NILAI SD
+   ```
+4. Salin **Spreadsheet ID** dari bilah alamat peramban (URL):
+   - Contoh URL: `https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit`
+   - ID Spreadsheet adalah rangkaian karakter acak di antara `/d/` dan `/edit`:
+     `1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms`
+5. Simpan ID ini untuk dimasukkan ke Google Apps Script (lihat `SETUP_APPS_SCRIPT.md`).
 
 ---
 
-## 2. STRUKTUR 6 SHEET RESMI
+## 2. Inisialisasi Otomatis 9 Lembar Kerja (Sheet)
 
-Spreadsheet ini menggunakan 6 sheet terpisah:
+Anda **TIDAK PERLU** membuat ke-9 sheet secara manual dengan mengetik kolom satu per satu. Sistem Google Apps Script telah diprogram untuk membuat seluruh sheet, nama kolom, lebar kolom, dan pewarnaan header secara otomatis.
+
+1. Ikuti panduan deployment Google Apps Script di `SETUP_APPS_SCRIPT.md`.
+2. Pada editor Apps Script, pilih fungsi `initializeDatabase()` lalu klik **Run** (Jalankan).
+3. Berikan izin akses saat diminta (*Review permissions*).
+4. Google Apps Script akan secara otomatis membuat 9 lembar kerja berikut tanpa menghapus data lama:
+
+| No. | Nama Sheet | Tujuan & Peran |
+|---|---|---|
+| 1 | `Data_Siswa` | Master data siswa kelas 1–6 (17 kolom) |
+| 2 | `Data_Guru` | Data pendidik dan penugasan kelas (10 kolom) |
+| 3 | `Data_Absensi` | Catatan kehadiran harian siswa (14 kolom) |
+| 4 | `Data_Nilai` | Catatan nilai asesmen formatif & sumatif (16 kolom) |
+| 5 | `Pengaturan` | Parameter global sekolah dan kurikulum (4 kolom) |
+| 6 | `Pengguna` | Hak akses akun pengguna sistem (7 kolom) |
+| 7 | `Log_Sinkronisasi` | Catatan audit pertukaran data dua arah (9 kolom) |
+| 8 | `Log_Aktivitas` | Audit trail perubahan data oleh pengguna (8 kolom) |
+| 9 | `Antrean_Sinkronisasi` | Antrean transaksi tertunda & penanganan konflik (10 kolom) |
+
+---
+
+## 3. Rincian Kolom Sheet Master
 
 ### Sheet 1: `Data_Siswa`
-Sumber data induk siswa yang diisi dan diperbarui secara manual oleh Administrator.
-Header (Baris 1):
-`ID_Siswa`, `NIS`, `NISN`, `Nama_Lengkap`, `Jenis_Kelamin`, `Tempat_Lahir`, `Tanggal_Lahir`, `Nama_Orang_Tua`, `Alamat`, `Kelas`, `Tahun_Pelajaran`, `Status_Siswa`, `Updated_At`, `Sync_Status`.
+Kolom (A s.d Q):
+1. `ID_Siswa` (Teks unik, contoh: `SD-1-1001`)
+2. `NIS` (Nomor Induk Siswa - format Teks)
+3. `NISN` (10 digit NISN - format Teks)
+4. `Nama_Lengkap` (Wajib diisi)
+5. `Jenis_Kelamin` (*Laki-laki* atau *Perempuan*)
+6. `Tempat_Lahir`
+7. `Tanggal_Lahir` (Format: `YYYY-MM-DD`, contoh: `2019-03-15`)
+8. `Nama_Orang_Tua`
+9. `Alamat`
+10. `Kelas` (Angka `1`, `2`, `3`, `4`, `5`, atau `6`)
+11. `Tahun_Pelajaran` (contoh: `2026/2027`)
+12. `Status_Siswa` (*Aktif*, *Pindah*, *Lulus*, *Nonaktif*)
+13. `Foto_URL`
+14. `Created_At` (Tanggal input)
+15. `Updated_At` (Tanggal pembaruan terakhir)
+16. `Updated_By` (Nama admin / guru pengubah)
+17. `Sync_Status` (*synced* / *pending*)
 
-*Ketentuan Pengisian:*
-- `ID_Siswa`: ID unik dan permanen, contoh `STD_1001`.
-- `NIS` & `NISN`: Wajib diisi sebagai teks (tambahkan tanda petik satu `'` di depan jika diawali angka 0).
-- `Kelas`: Hanya bernilai `1`, `2`, `3`, `4`, `5`, atau `6`.
-- `Status_Siswa`: `Aktif`, `Pindah`, atau `Lulus`.
+### Sheet 2: `Data_Guru`
+Kolom (A s.d J):
+1. `User_ID`, 2. `Nama_Guru`, 3. `Email`, 4. `NIP`, 5. `Foto_URL`, 6. `Kelas_Ditugaskan` (contoh: `1` atau `1, 2`), 7. `Role` (`guru`/`admin`/`kepsek`), 8. `Status` (`Aktif`/`Nonaktif`), 9. `Created_At`, 10. `Updated_At`.
 
-### Sheet 2: `Data_Absensi`
-Tempat salinan data presensi harian yang dikirim dari website:
-`ID_Absensi`, `Tanggal`, `Tahun_Pelajaran`, `Semester`, `Kelas`, `ID_Siswa`, `NIS`, `NISN`, `Nama_Siswa`, `Status_Absensi`, `Keterangan`, `Diinput_Oleh`, `Updated_At`, `Sync_Status`.
+### Sheet 3: `Data_Absensi`
+Kolom (A s.d N):
+1. `ID_Absensi`, 2. `Tanggal`, 3. `Tahun_Pelajaran`, 4. `Semester`, 5. `Kelas`, 6. `ID_Siswa`, 7. `NIS`, 8. `NISN`, 9. `Nama_Siswa`, 10. `Status_Absensi` (*Hadir, Sakit, Izin, Alpa*), 11. `Keterangan`, 12. `Diinput_Oleh`, 13. `Updated_At`, 14. `Sync_Status`.
 
-### Sheet 3: `Data_Nilai`
-Tempat salinan data asesmen nilai siswa yang dikirim dari website:
-`ID_Nilai`, `Tahun_Pelajaran`, `Semester`, `Kelas`, `ID_Siswa`, `NIS`, `NISN`, `Nama_Siswa`, `Mata_Pelajaran`, `Jenis_Asesmen`, `Lingkup_Materi`, `Nilai`, `Deskripsi`, `Diinput_Oleh`, `Updated_At`, `Sync_Status`.
-
-### Sheet 4: `Pengaturan`
-Menyimpan konfigurasi sekolah:
-`Nama_Pengaturan`, `Nilai_Pengaturan`, `Updated_At`.
-
-### Sheet 5: `Pengguna`
-Menyimpan data staf dan penugasan kelas:
-`User_ID`, `Nama`, `Email`, `Role`, `Kelas_Ditugaskan`, `Status`, `Updated_At`.
-
-### Sheet 6: `Log_Sinkronisasi`
-Menyimpan riwayat transaksi pertukaran data:
-`ID_Log`, `Waktu`, `Jenis_Data`, `Arah_Sinkronisasi`, `Jumlah_Diproses`, `Jumlah_Berhasil`, `Jumlah_Gagal`, `Status`, `Pesan`.
-
----
-
-## 3. PEMBUATAN OTOMATIS VIA GOOGLE APPS SCRIPT (1-KLIK)
-
-Anda tidak perlu mengetik header di atas satu per satu! Skrip backend yang disertakan memiliki fungsi pembuat otomatis:
-
-1. Di spreadsheet Anda, klik menu **Extensions > Apps Script** (Ekstensi > Apps Script).
-2. Hapus kode default yang ada di file `Code.gs`.
-3. Buka file [`backend/Code.gs`](backend/Code.gs) dari proyek ini, salin seluruh kodenya, lalu tempelkan ke editor Apps Script.
-4. Di bilah atas editor Apps Script, pilih fungsi: **`setupDatabaseAndFolders`**.
-5. Klik tombol **Run** (Jalankan).
-6. Google akan meminta izin otorisasi (*Review permissions*). Klik akun Anda > *Advanced* > *Go to (unsafe)* > *Allow*.
-7. Dalam beberapa detik, seluruh 6 sheet, header tebal berwarna biru navy, data contoh awal kelas 1–6, dan struktur folder Google Drive akan langsung terbuat secara sempurna!
+### Sheet 4: `Data_Nilai`
+Kolom (A s.d P):
+1. `ID_Nilai`, 2. `Tahun_Pelajaran`, 3. `Semester`, 4. `Kelas`, 5. `ID_Siswa`, 6. `NIS`, 7. `NISN`, 8. `Nama_Siswa`, 9. `Mata_Pelajaran`, 10. `Jenis_Asesmen`, 11. `Lingkup_Materi`, 12. `Nilai`, 13. `Deskripsi`, 14. `Diinput_Oleh`, 15. `Updated_At`, 16. `Sync_Status`.
 
 ---
 
-## 4. DEPLOY APPS SCRIPT SEBAGAI WEB APP (API)
+## 4. Validasi Data yang Wajib Diterapkan di Sheet
 
-Agar website dapat menyinkronkan data dengan Google Sheets:
-
-1. Pada editor Apps Script, klik tombol biru **Deploy > New deployment** di sudut kanan atas.
-2. Klik ikon roda gigi di sebelah *Select type*, lalu pilih **Web app**.
-3. Atur konfigurasi berikut:
-   - **Description**: `API Absensi dan Nilai SD v1`
-   - **Execute as**: `Me (email Anda)`
-   - **Who has access**: `Anyone` *(agar frontend Vercel dapat memanggil API)*
-4. Klik **Deploy**.
-5. Salin **Web app URL** yang dihasilkan (formatnya: `https://script.google.com/macros/s/AKfycbx.../exec`).
-6. Masukkan URL tersebut ke file `.env` di komputer Anda:
-   ```env
-   VITE_GAS_API_URL="https://script.google.com/macros/s/AKfycbx.../exec"
-   ```
+Untuk memastikan tidak ada kesalahan input manual oleh admin:
+1. **NIS dan NISN**: Atur format angka kolom B dan C sebagai **Format > Plain text** (Teks biasa) agar awalan angka nol (0) tidak hilang.
+2. **Kelas**: Pasang validasi data (*Data > Data validation*):
+   - Kriteria: *List of items*: `1, 2, 3, 4, 5, 6`.
+3. **Status Siswa**:
+   - Kriteria: *List of items*: `Aktif, Pindah, Lulus, Nonaktif`.
+4. **Jenis Kelamin**:
+   - Kriteria: *List of items*: `Laki-laki, Perempuan`.
 
 ---
 
-## 5. MENGUJI KONEKSI & SINKRONISASI
+## 5. Alur Input Siswa Manual oleh Administrator
 
-1. Buka website absensi di browser lokal Anda.
-2. Masuk sebagai Administrator (`admin@sekolah.id`).
-3. Buka menu **Sinkronisasi Data**.
-4. Periksa kartu status *Master Google Sheets*: indikator akan berubah menjadi **Live Terhubung**.
-5. Klik tombol **📥 Sinkronkan Data Siswa Sekarang (Sheets → Firebase)**.
-6. Notifikasi sukses akan muncul dan tabel riwayat transaksi pada sheet `Log_Sinkronisasi` akan mencatat transaksi berhasil.
-
----
-
-## 6. MENGAKTIFKAN PENGIRIMAN OTOMATIS (AUTO-SYNC DUA ARAH)
-
-Agar data terkirim **langsung dan otomatis tanpa perlu klik tombol manual**, sistem telah dilengkapi mekanisme 2 arah:
-
-### A. Arah 1: Website → Google Sheets (Otomatis saat Guru Simpan)
-- **Cara Kerja:** Setiap kali Guru menekan tombol **"💾 Simpan Presensi Harian"** di menu Presensi atau **"💾 Simpan Nilai"** di menu Penilaian, sistem di browser langsung menjalankan *Background Sync* (HTTP POST) ke Web App Google Apps Script.
-- Data langsung tertulis di sheet `Data_Absensi` dan `Data_Nilai` secara otomatis dalam hitungan detik.
-- Guru tidak perlu membuka menu Sinkronisasi.
-- **Syarat:** Pastikan `VITE_GAS_API_URL` sudah terisi di file `.env` (atau di Environment Variables Vercel) dan Web App Apps Script di-deploy dengan hak akses **Anyone**.
-
-### B. Arah 2: Google Sheets → Website / Firebase (Otomatis saat Admin Edit Data Siswa)
-Google Sheets bertindak sebagai master data siswa. Agar perubahan atau penambahan siswa baru di sheet `Data_Siswa` terkirim langsung secara otomatis:
-
-#### Cara 1: Menggunakan Fungsi Pemicu Otomatis 1-Klik (Rekomendasi)
-1. Buka editor Google Apps Script (**Extensions > Apps Script** di Spreadsheet Anda).
-2. Di bilah fungsi bagian atas, pilih fungsi: **`installAutoSyncTriggers`**.
-3. Klik tombol **Run** (Jalankan).
-4. Google Apps Script akan otomatis memasang dua pemicu:
-   - **Pemicu `onEdit`:** Memantau setiap ketikan admin di sheet `Data_Siswa` secara seketika dan memberi stempel `Updated_At`.
-   - **Pemicu Timer Berkala (Time-driven cron):** Berjalan otomatis setiap 10 menit untuk memvalidasi dan merapikan data siswa baru/berubah.
-
-#### Cara 2: Pengambilan Otomatis di Sisi Website (Auto-fetch)
-- Website telah dilengkapi modul auto-fetch: setiap kali pengguna membuka aplikasi, kembali online, atau membuka menu Data Siswa, sistem secara otomatis mengecek dan memperbarui cache siswa dari Google Sheets di latar belakang.
+1. Administrator membuka spreadsheet pada sheet `Data_Siswa`.
+2. Masukkan baris data siswa baru (Kelas 1 sampai 6).
+3. Buka aplikasi web, masuk sebagai Administrator, buka menu **Sinkronisasi**.
+4. Klik tombol **Sinkronkan Siswa**.
+5. Sistem Apps Script akan membaca baris di Google Sheets dan menyimpannya langsung ke database Firestore. Siswa baru langsung muncul di aplikasi!
