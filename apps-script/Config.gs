@@ -87,6 +87,14 @@ function getSpreadsheet() {
     }
   }
 
+  // ID Google Sheets Master SDN Kesilir 02
+  const DEFAULT_SPREADSHEET_ID = '1OR9Ez_f1TUw_NS8Hlg3TLqB3ciZvu9cUWdcghyIPqAM';
+  try {
+    return SpreadsheetApp.openById(DEFAULT_SPREADSHEET_ID);
+  } catch (e) {
+    Logger.log('Gagal membuka spreadsheet default: ' + e.message);
+  }
+
   // Jika skrip terikat langsung pada Google Sheet (Bound Script via Ekstensi > Apps Script)
   try {
     const active = SpreadsheetApp.getActiveSpreadsheet();
@@ -95,5 +103,5 @@ function getSpreadsheet() {
     // Standalone script
   }
 
-  throw new Error('SPREADSHEET_ID belum diatur di Script Properties dan skrip tidak dijalankan dari Google Sheets aktif.');
+  throw new Error('SPREADSHEET_ID tidak dapat ditemukan.');
 }

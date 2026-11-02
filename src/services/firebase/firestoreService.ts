@@ -46,7 +46,7 @@ export const DEFAULT_SCHOOL_PROFILE: SchoolProfile = {
   principalNip: '198306012014121000',
   academicYear: '2026/2027',
   activeSemester: '1',
-  spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit',
+  spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/1OR9Ez_f1TUw_NS8Hlg3TLqB3ciZvu9cUWdcghyIPqAM/edit?gid=0#gid=0',
 };
 
 // Data Asli Siswa SDN Kesilir 02 Kelas 1 (Sesuai Buku Nilai Asli Gambar 2)

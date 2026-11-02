@@ -1,6 +1,7 @@
 import { SystemSyncStatus } from '../../types';
 
-const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL || '';
+const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlrZTd5VGvS_c5AyQQwb3qzmDd9Z8RZWwpgD7ak_55tUFvwlqN4PYIuqtKx8G2ITsC/exec';
+const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL || DEFAULT_APPS_SCRIPT_URL;
 const API_SECRET_KEY = import.meta.env.VITE_API_SECRET_KEY || '';
 
 export const isAppsScriptConfigured = Boolean(
