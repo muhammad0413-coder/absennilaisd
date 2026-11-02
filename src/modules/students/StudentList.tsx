@@ -9,9 +9,7 @@ import {
   Edit2,
   Eye,
   UserX,
-  CheckCircle2,
   FileSpreadsheet,
-  FileText,
   AlertCircle,
   Save,
 } from 'lucide-react';
@@ -23,6 +21,7 @@ import { exportToExcel } from '../../services/export/excelExport';
 import { exportToCSV } from '../../services/export/csvExport';
 import { Student, StudentStatus, Gender } from '../../types';
 import { Modal } from '../../components/common/Modal';
+import { KopSurat } from '../../components/common/KopSurat';
 import { formatDateIndo } from '../../utils/formatters';
 
 export const StudentList: React.FC = () => {
@@ -39,7 +38,7 @@ export const StudentList: React.FC = () => {
     if (isTeacher && user && user.assignedClasses.length > 0) {
       return user.assignedClasses[0];
     }
-    return 'ALL';
+    return '1';
   });
   const [selectedStatus, setSelectedStatus] = useState<string>('Aktif');
 
@@ -49,16 +48,16 @@ export const StudentList: React.FC = () => {
   const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
-  // Form State for Add / Edit
+  // Form State
   const [formData, setFormData] = useState<Partial<Student>>({
     name: '',
     nis: '',
     nisn: '',
     gender: 'Laki-laki',
-    birthPlace: '',
-    birthDate: '2018-01-01',
+    birthPlace: 'Jember',
+    birthDate: '2019-01-01',
     parentName: '',
-    address: '',
+    address: 'Kesilir, Wuluhan, Jember',
     class: isTeacher && user ? user.assignedClasses[0] || '1' : '1',
     schoolYear: schoolProfile?.academicYear || '2026/2027',
     status: 'Aktif',
@@ -83,27 +82,13 @@ export const StudentList: React.FC = () => {
     loadStudents();
   }, []);
 
-  // Filter students based on role and selected controls
   const visibleStudents = students.filter(s => {
-    // 1. RBAC class restriction for teachers
-    if (isTeacher && !canAccessClass(s.class)) {
-      return false;
-    }
-    // 2. Class dropdown filter
-    if (selectedClass !== 'ALL' && s.class !== selectedClass) {
-      return false;
-    }
-    // 3. Status filter
-    if (selectedStatus !== 'ALL' && s.status !== selectedStatus) {
-      return false;
-    }
-    // 4. Search query
+    if (isTeacher && !canAccessClass(s.class)) return false;
+    if (selectedClass !== 'ALL' && s.class !== selectedClass) return false;
+    if (selectedStatus !== 'ALL' && s.status !== selectedStatus) return false;
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
-      const matchName = s.name.toLowerCase().includes(q);
-      const matchNis = s.nis.toLowerCase().includes(q);
-      const matchNisn = s.nisn.toLowerCase().includes(q);
-      return matchName || matchNis || matchNisn;
+      return s.name.toLowerCase().includes(q) || s.nis.includes(q) || s.nisn.includes(q);
     }
     return true;
   });
@@ -115,10 +100,10 @@ export const StudentList: React.FC = () => {
       nis: '',
       nisn: '',
       gender: 'Laki-laki',
-      birthPlace: '',
-      birthDate: '2018-01-01',
+      birthPlace: 'Jember',
+      birthDate: '2019-01-01',
       parentName: '',
-      address: '',
+      address: 'Kesilir, Wuluhan, Jember',
       class: isTeacher && user ? user.assignedClasses[0] || '1' : '1',
       schoolYear: schoolProfile?.academicYear || '2026/2027',
       status: 'Aktif',
@@ -159,11 +144,6 @@ export const StudentList: React.FC = () => {
       return;
     }
 
-    if (!canAccessClass(formData.class || '1')) {
-      showToast('error', 'Akses Ditolak', 'Anda tidak memiliki hak akses untuk kelas tersebut');
-      return;
-    }
-
     try {
       const studentId = selectedStudent
         ? selectedStudent.studentId
@@ -175,10 +155,10 @@ export const StudentList: React.FC = () => {
         nisn: formData.nisn || '',
         name: formData.name.trim(),
         gender: formData.gender as Gender,
-        birthPlace: formData.birthPlace || '',
+        birthPlace: formData.birthPlace || 'Jember',
         birthDate: formData.birthDate || '',
         parentName: formData.parentName || '',
-        address: formData.address || '',
+        address: formData.address || 'Kesilir, Wuluhan, Jember',
         class: formData.class || '1',
         schoolYear: formData.schoolYear || schoolProfile?.academicYear || '2026/2027',
         status: (formData.status as StudentStatus) || 'Aktif',
@@ -254,7 +234,7 @@ export const StudentList: React.FC = () => {
       'Tahun Pelajaran': s.schoolYear,
       'Status': s.status,
     }));
-    exportToExcel(exportData, `Daftar_Siswa_Kelas_${selectedClass}_${new Date().toISOString().slice(0, 10)}`);
+    exportToExcel(exportData, `Daftar_Siswa_SDN_Kesilir_02_Kelas_${selectedClass}`);
   };
 
   const handleExportCSV = () => {
@@ -267,7 +247,7 @@ export const StudentList: React.FC = () => {
       Kelas: s.class,
       Status: s.status,
     }));
-    exportToCSV(exportData, `Daftar_Siswa_Kelas_${selectedClass}`);
+    exportToCSV(exportData, `Daftar_Siswa_SDN_Kesilir_02_Kelas_${selectedClass}`);
   };
 
   const handlePrint = () => {
@@ -275,28 +255,32 @@ export const StudentList: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5">
-      {/* Printable School Header (Only visible in Print) */}
-      <div className="hidden print:block border-b-2 border-black pb-3 mb-4 text-center">
-        <h2 className="text-xl font-bold uppercase">{schoolProfile?.name || 'SD NEGERI 01 CEMARA INDAH'}</h2>
-        <p className="text-xs">{schoolProfile?.address || 'Jl. Pendidikan No. 45'}</p>
-        <p className="text-xs font-semibold mt-1">DAFTAR SISWA ROMBONGAN BELAJAR KELAS {selectedClass === 'ALL' ? '1–6' : selectedClass}</p>
-        <p className="text-[10px] text-slate-500">Tahun Pelajaran: {schoolProfile?.academicYear} | Tanggal Cetak: {formatDateIndo(new Date())}</p>
+    <div className="space-y-4">
+      {/* ============================================================== */}
+      {/* CETAK KOP SURAT RESMI SDN KESILIR 02 (Aktif saat Print F4) */}
+      {/* ============================================================== */}
+      <div className="hidden print:block mb-3">
+        <KopSurat />
+        <div className="text-center my-2">
+          <h2 className="text-sm font-extrabold uppercase tracking-wide">
+            DAFTAR SISWA ROMBONGAN BELAJAR KELAS {selectedClass === 'ALL' ? '1–6' : selectedClass}
+          </h2>
+          <p className="text-[10px] text-black">
+            Tahun Pelajaran: {schoolProfile?.academicYear || '2026/2027'} | Semester: {schoolProfile?.activeSemester || '1'}
+          </p>
+        </div>
       </div>
 
-      {/* Top Action Bar (Screen Only) */}
+      {/* Screen Header Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Manajemen Data Siswa</h2>
+          <h2 className="text-lg font-bold text-slate-800">Manajemen Data Siswa SDN Kesilir 02</h2>
           <p className="text-xs text-slate-500">
-            {isTeacher
-              ? `Pengelolaan siswa binaan Kelas ${user?.assignedClasses.join(', ')}`
-              : 'Daftar seluruh siswa aktif, nonaktif, dan riwayat mutasi kelas 1 sampai 6'}
+            Daftar siswa kelas 1–6 Kecamatan Wuluhan, Kabupaten Jember
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Add Student Button (Admin and Assigned Teachers) */}
           {(isAdmin || isTeacher) && (
             <button
               onClick={handleOpenAdd}
@@ -307,11 +291,9 @@ export const StudentList: React.FC = () => {
             </button>
           )}
 
-          {/* Export Dropdown Buttons */}
           <button
             onClick={handleExportExcel}
             className="px-3 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 transition flex items-center gap-1.5 shadow-2xs"
-            title="Ekspor Excel (.xlsx)"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             <span>Excel</span>
@@ -320,7 +302,6 @@ export const StudentList: React.FC = () => {
           <button
             onClick={handleExportCSV}
             className="px-3 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 transition flex items-center gap-1.5 shadow-2xs"
-            title="Ekspor CSV"
           >
             <Download className="w-4 h-4 text-blue-600" />
             <span>CSV</span>
@@ -328,18 +309,17 @@ export const StudentList: React.FC = () => {
 
           <button
             onClick={handlePrint}
-            className="px-3 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 transition flex items-center gap-1.5 shadow-2xs"
-            title="Cetak A4"
+            className="px-3.5 py-2 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-900 transition flex items-center gap-1.5 shadow-sm"
+            title="Cetak F4 Portrait Presisi"
           >
-            <Printer className="w-4 h-4 text-slate-600" />
-            <span>Cetak</span>
+            <Printer className="w-4 h-4" />
+            <span>Cetak F4</span>
           </button>
         </div>
       </div>
 
-      {/* Filters Card */}
+      {/* Filter Bar */}
       <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-wrap gap-3 items-center justify-between print:hidden">
-        {/* Search */}
         <div className="relative flex-1 min-w-[220px]">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
@@ -351,14 +331,13 @@ export const StudentList: React.FC = () => {
           />
         </div>
 
-        {/* Filter Kelas */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500 font-semibold">Kelas:</span>
           <select
             value={selectedClass}
             onChange={e => setSelectedClass(e.target.value)}
             disabled={isTeacher && user?.assignedClasses.length === 1}
-            className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-school-lightBlue bg-white disabled:bg-slate-100"
+            className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-school-navy bg-white disabled:bg-slate-100"
           >
             {isAdmin && <option value="ALL">Semua Kelas (1–6)</option>}
             <option value="1">Kelas 1</option>
@@ -370,13 +349,12 @@ export const StudentList: React.FC = () => {
           </select>
         </div>
 
-        {/* Filter Status */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500 font-semibold">Status:</span>
           <select
             value={selectedStatus}
             onChange={e => setSelectedStatus(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-school-lightBlue bg-white"
+            className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium bg-white"
           >
             <option value="ALL">Semua Status</option>
             <option value="Aktif">Aktif</option>
@@ -386,119 +364,126 @@ export const StudentList: React.FC = () => {
           </select>
         </div>
 
-        <span className="text-xs text-slate-400">
-          Menampilkan: <strong>{visibleStudents.length}</strong> siswa
+        <span className="text-xs text-slate-500 font-semibold">
+          Total: <strong>{visibleStudents.length}</strong> siswa
         </span>
       </div>
 
-      {/* Students Data Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      {/* Table */}
+      <div className="bg-white rounded-2xl border border-black shadow-xs overflow-hidden print:border-black print:rounded-none">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-left border-collapse border border-black text-xs print:text-[8.5pt]">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
-                <th className="py-3 px-4 text-center w-12">No.</th>
-                <th className="py-3 px-4">NIS / NISN</th>
-                <th className="py-3 px-4">Nama Lengkap</th>
-                <th className="py-3 px-4 text-center">L/P</th>
-                <th className="py-3 px-4 text-center">Kelas</th>
-                <th className="py-3 px-4">Nama Orang Tua</th>
-                <th className="py-3 px-4 text-center">Status</th>
-                <th className="py-3 px-4 text-center print:hidden">Aksi</th>
+              <tr className="bg-slate-100 border-b border-black text-black font-bold uppercase tracking-wider text-[10px] print:text-[8pt]">
+                <th className="py-2 px-2 text-center w-10 border border-black">No.</th>
+                <th className="py-2 px-3 border border-black w-28">NIS / NISN</th>
+                <th className="py-2 px-3 border border-black">Nama Lengkap Siswa</th>
+                <th className="py-2 px-2 text-center w-12 border border-black">L/P</th>
+                <th className="py-2 px-2 text-center w-16 border border-black">Kelas</th>
+                <th className="py-2 px-3 border border-black">Nama Orang Tua</th>
+                <th className="py-2 px-2 text-center w-20 border border-black">Status</th>
+                <th className="py-2 px-2 text-center w-24 border border-black print:hidden">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-black">
               {loading ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-slate-400">
-                    Memuat data siswa...
+                    Memuat data siswa SDN Kesilir 02...
                   </td>
                 </tr>
               ) : visibleStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
-                    <Users className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                    <p className="font-semibold text-slate-600">Tidak ada data siswa ditemukan</p>
-                    <p className="text-[11px] mt-0.5">Coba sesuaikan kata kunci pencarian atau filter kelas.</p>
+                  <td colSpan={8} className="py-8 text-center text-slate-400">
+                    Tidak ada siswa yang sesuai filter.
                   </td>
                 </tr>
               ) : (
-                visibleStudents.map((student, idx) => {
-                  const statusColors: Record<StudentStatus, string> = {
-                    Aktif: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                    Pindah: 'bg-amber-50 text-amber-700 border-amber-200',
-                    Lulus: 'bg-blue-50 text-blue-700 border-blue-200',
-                    Nonaktif: 'bg-rose-50 text-rose-700 border-rose-200',
-                  };
-
-                  return (
-                    <tr key={student.studentId} className="hover:bg-slate-50/70 transition">
-                      <td className="py-3 px-4 text-center font-medium text-slate-500">{idx + 1}</td>
-                      <td className="py-3 px-4 font-mono font-medium text-slate-700">
-                        <div>{student.nis || '-'}</div>
-                        <div className="text-[10px] text-slate-400">{student.nisn || '-'}</div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-slate-800">{student.name}</div>
-                        <div className="text-[10px] text-slate-400">{student.birthPlace}, {student.birthDate}</div>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${student.gender === 'Laki-laki' ? 'bg-blue-50 text-blue-700' : 'bg-pink-50 text-pink-700'}`}>
-                          {student.gender === 'Laki-laki' ? 'L' : 'P'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center font-bold text-school-navy">
-                        Kelas {student.class}
-                      </td>
-                      <td className="py-3 px-4 text-slate-600">{student.parentName || '-'}</td>
-                      <td className="py-3 px-4 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusColors[student.status]}`}>
-                          {student.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center print:hidden">
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            onClick={() => handleOpenDetail(student)}
-                            className="p-1.5 text-slate-500 hover:text-school-blue hover:bg-blue-50 rounded-lg transition"
-                            title="Detail Siswa"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          {(isAdmin || (isTeacher && canAccessClass(student.class))) && (
-                            <>
-                              <button
-                                onClick={() => handleOpenEdit(student)}
-                                className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
-                                title="Edit Siswa"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleOpenDeactivate(student)}
-                                className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                                title="Nonaktifkan / Mutasi"
-                              >
-                                <UserX className="w-4 h-4" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                visibleStudents.map((student, idx) => (
+                  <tr key={student.studentId} className="hover:bg-slate-50">
+                    <td className="py-1.5 px-2 text-center border border-black font-medium">{idx + 1}</td>
+                    <td className="py-1.5 px-3 border border-black font-mono">
+                      <div className="font-bold">{student.nis}</div>
+                      <div className="text-[10px] text-slate-500">{student.nisn}</div>
+                    </td>
+                    <td className="py-1.5 px-3 border border-black font-bold uppercase">
+                      {student.name}
+                    </td>
+                    <td className="py-1.5 px-2 text-center border border-black font-bold">
+                      {student.gender === 'Laki-laki' ? 'L' : 'P'}
+                    </td>
+                    <td className="py-1.5 px-2 text-center border border-black font-bold">
+                      Kelas {student.class}
+                    </td>
+                    <td className="py-1.5 px-3 border border-black">{student.parentName || '-'}</td>
+                    <td className="py-1.5 px-2 text-center border border-black font-semibold">
+                      {student.status}
+                    </td>
+                    <td className="py-1.5 px-2 text-center border border-black print:hidden">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => handleOpenDetail(student)}
+                          className="p-1 text-slate-500 hover:text-school-blue hover:bg-blue-50 rounded"
+                          title="Detail"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                        {(isAdmin || isTeacher) && (
+                          <>
+                            <button
+                              onClick={() => handleOpenEdit(student)}
+                              className="p-1 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleOpenDeactivate(student)}
+                              className="p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded"
+                              title="Mutasi"
+                            >
+                              <UserX className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Add / Edit Student Modal */}
+      {/* Signature Area for Printing */}
+      <div className="hidden print:grid grid-cols-2 gap-8 text-center text-xs print:text-[9pt] pt-6 text-black">
+        <div>
+          <p>Mengetahui,</p>
+          <p className="font-bold">Kepala Sekolah SDN Kesilir 02</p>
+          <div className="h-16" />
+          <p className="font-bold underline">
+            {schoolProfile?.principalName || 'Abdullah Mahsar, S.Pd'}
+          </p>
+          <p>NIP. {schoolProfile?.principalNip || '198306012014121000'}</p>
+        </div>
+
+        <div>
+          <p>Jember, {formatDateIndo(new Date())}</p>
+          <p className="font-bold">Wali Kelas {selectedClass}</p>
+          <div className="h-16" />
+          <p className="font-bold underline">
+            {user?.role === 'guru' ? (user.name || 'Suci Ayu Ningrum, S.Pd') : 'Suci Ayu Ningrum, S.Pd'}
+          </p>
+          <p>NIP. {user?.role === 'guru' && user.nip ? user.nip : '199410142023212000'}</p>
+        </div>
+      </div>
+
+      {/* Add/Edit Modal */}
       <Modal
         isOpen={isAddEditModalOpen}
         onClose={() => setIsAddEditModalOpen(false)}
-        title={selectedStudent ? 'Edit Data Siswa' : 'Tambah Siswa Baru'}
+        title={selectedStudent ? 'Edit Data Siswa' : 'Tambah Siswa Baru SDN Kesilir 02'}
         maxWidth="lg"
       >
         <form onSubmit={handleSaveStudent} className="space-y-4 text-xs">
@@ -510,7 +495,7 @@ export const StudentList: React.FC = () => {
                 value={formData.name || ''}
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Masukkan nama lengkap siswa"
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-school-lightBlue"
+                className="w-full px-3 py-2 rounded-xl border text-xs"
                 required
               />
             </div>
@@ -522,18 +507,18 @@ export const StudentList: React.FC = () => {
                 value={formData.nis || ''}
                 onChange={e => setFormData({ ...formData, nis: e.target.value })}
                 placeholder="Contoh: 1001"
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs"
+                className="w-full px-3 py-2 rounded-xl border text-xs font-mono"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">NISN (Nomor Induk Siswa Nasional)</label>
+              <label className="block font-semibold text-slate-700 mb-1">NISN</label>
               <input
                 type="text"
                 value={formData.nisn || ''}
                 onChange={e => setFormData({ ...formData, nisn: e.target.value })}
                 placeholder="10 digit nomor NISN"
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs"
+                className="w-full px-3 py-2 rounded-xl border text-xs font-mono"
               />
             </div>
 
@@ -542,7 +527,7 @@ export const StudentList: React.FC = () => {
               <select
                 value={formData.gender || 'Laki-laki'}
                 onChange={e => setFormData({ ...formData, gender: e.target.value as Gender })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white"
+                className="w-full px-3 py-2 rounded-xl border text-xs bg-white"
               >
                 <option value="Laki-laki">Laki-laki</option>
                 <option value="Perempuan">Perempuan</option>
@@ -555,7 +540,7 @@ export const StudentList: React.FC = () => {
                 value={formData.class || '1'}
                 onChange={e => setFormData({ ...formData, class: e.target.value })}
                 disabled={isTeacher && user?.assignedClasses.length === 1}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white disabled:bg-slate-100"
+                className="w-full px-3 py-2 rounded-xl border text-xs bg-white font-bold text-school-navy"
               >
                 <option value="1">Kelas 1</option>
                 <option value="2">Kelas 2</option>
@@ -570,10 +555,9 @@ export const StudentList: React.FC = () => {
               <label className="block font-semibold text-slate-700 mb-1">Tempat Lahir</label>
               <input
                 type="text"
-                value={formData.birthPlace || ''}
+                value={formData.birthPlace || 'Jember'}
                 onChange={e => setFormData({ ...formData, birthPlace: e.target.value })}
-                placeholder="Kota kelahiran"
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs"
+                className="w-full px-3 py-2 rounded-xl border text-xs"
               />
             </div>
 
@@ -583,7 +567,7 @@ export const StudentList: React.FC = () => {
                 type="date"
                 value={formData.birthDate || ''}
                 onChange={e => setFormData({ ...formData, birthDate: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs"
+                className="w-full px-3 py-2 rounded-xl border text-xs font-mono"
               />
             </div>
 
@@ -593,24 +577,22 @@ export const StudentList: React.FC = () => {
                 type="text"
                 value={formData.parentName || ''}
                 onChange={e => setFormData({ ...formData, parentName: e.target.value })}
-                placeholder="Nama ayah / ibu / wali"
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs"
+                className="w-full px-3 py-2 rounded-xl border text-xs"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block font-semibold text-slate-700 mb-1">Alamat Tempat Tinggal</label>
-              <textarea
-                value={formData.address || ''}
+              <label className="block font-semibold text-slate-700 mb-1">Alamat Domisili</label>
+              <input
+                type="text"
+                value={formData.address || 'Kesilir, Wuluhan, Jember'}
                 onChange={e => setFormData({ ...formData, address: e.target.value })}
-                placeholder="Alamat domisili lengkap"
-                rows={2}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs"
+                className="w-full px-3 py-2 rounded-xl border text-xs"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-3 border-t">
             <button
               type="button"
               onClick={() => setIsAddEditModalOpen(false)}
@@ -623,17 +605,17 @@ export const StudentList: React.FC = () => {
               className="px-5 py-2 bg-school-navy text-white font-semibold rounded-xl hover:bg-school-blue transition flex items-center gap-1.5 shadow-sm"
             >
               <Save className="w-4 h-4" />
-              <span>Simpan Data</span>
+              <span>Simpan Data Siswa</span>
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Student Detail Modal */}
+      {/* Detail Modal */}
       <Modal
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
-        title="Detail Siswa Lengkap"
+        title="Detail Siswa SDN Kesilir 02"
         maxWidth="md"
       >
         {selectedStudent && (
@@ -644,7 +626,7 @@ export const StudentList: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-900">{selectedStudent.name}</h3>
-                <p className="text-slate-500 font-mono">NIS: {selectedStudent.nis || '-'} | NISN: {selectedStudent.nisn || '-'}</p>
+                <p className="text-slate-500 font-mono">NIS: {selectedStudent.nis} | NISN: {selectedStudent.nisn}</p>
                 <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-semibold text-[10px]">
                   Kelas {selectedStudent.class} ({selectedStudent.status})
                 </span>
@@ -658,7 +640,7 @@ export const StudentList: React.FC = () => {
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px] font-semibold">Tempat, Tgl Lahir</span>
-                <span className="font-medium">{selectedStudent.birthPlace || '-'}, {selectedStudent.birthDate || '-'}</span>
+                <span className="font-medium">{selectedStudent.birthPlace}, {selectedStudent.birthDate}</span>
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px] font-semibold">Nama Orang Tua</span>
@@ -686,7 +668,7 @@ export const StudentList: React.FC = () => {
         )}
       </Modal>
 
-      {/* Deactivate / Mutasi Modal */}
+      {/* Mutasi Modal */}
       <Modal
         isOpen={isDeactivateModalOpen}
         onClose={() => setIsDeactivateModalOpen(false)}
@@ -695,16 +677,6 @@ export const StudentList: React.FC = () => {
       >
         {selectedStudent && (
           <div className="space-y-4 text-xs text-slate-700">
-            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-amber-900">Ketentuan Integritas Data</p>
-                <p className="text-[11px] text-amber-800 mt-0.5">
-                  Siswa tidak langsung dihapus permanen dari database guna menjaga keutuhan riwayat nilai dan absensi. Pilih status perubahan di bawah:
-                </p>
-              </div>
-            </div>
-
             <div>
               <label className="block font-semibold mb-1">Status Baru</label>
               <select
@@ -720,11 +692,11 @@ export const StudentList: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-semibold mb-1">Keterangan / Alasan Mutasi</label>
+              <label className="block font-semibold mb-1">Alasan Mutasi</label>
               <textarea
                 value={deactivateReason}
                 onChange={e => setDeactivateReason(e.target.value)}
-                placeholder="Contoh: Pindah domisili orang tua ke luar kota..."
+                placeholder="Alasan mutasi..."
                 rows={3}
                 className="w-full px-3 py-2 rounded-xl border text-xs"
               />
@@ -741,9 +713,9 @@ export const StudentList: React.FC = () => {
               <button
                 type="button"
                 onClick={handleConfirmDeactivate}
-                className="px-5 py-2 bg-rose-600 text-white font-semibold rounded-xl hover:bg-rose-700 transition shadow-sm"
+                className="px-5 py-2 bg-rose-600 text-white font-semibold rounded-xl hover:bg-rose-700 transition"
               >
-                Konfirmasi Perubahan
+                Konfirmasi
               </button>
             </div>
           </div>

@@ -18,6 +18,7 @@ import { exportToExcel } from '../../services/export/excelExport';
 import { exportToCSV } from '../../services/export/csvExport';
 import { Student, AttendanceRecord, StudentAttendanceRecap } from '../../types';
 import { formatDateIndo, formatPercentage } from '../../utils/formatters';
+import { KopSurat } from '../../components/common/KopSurat';
 
 export const AttendanceRecap: React.FC = () => {
   const { user, isAdmin, isTeacher, canAccessClass } = useAuth();
@@ -158,15 +159,16 @@ export const AttendanceRecap: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5">
-      {/* Printable Header */}
-      <div className="hidden print:block text-center border-b-2 border-black pb-3 mb-4">
-        <h2 className="text-xl font-bold uppercase">{schoolProfile?.name || 'SD NEGERI 01 CEMARA INDAH'}</h2>
-        <p className="text-xs">{schoolProfile?.address}</p>
-        <p className="text-sm font-bold mt-2 uppercase">REKAPITULASI KEHADIRAN SISWA KELAS {selectedClass}</p>
-        <p className="text-xs">
-          Periode: {periodType === 'monthly' ? `Bulan ${selectedMonth}` : periodType === 'semester' ? `Semester ${selectedSemester} (${schoolProfile?.academicYear})` : `${startDate} s.d ${endDate}`} | Total Hari Belajar Terdata: {distinctDates.length} Hari
-        </p>
+    <div className="space-y-5 print-f4-landscape">
+      {/* Kop Surat Resmi SDN Kesilir 02 untuk Cetak */}
+      <div className="hidden print:block mb-4">
+        <KopSurat />
+        <div className="text-center mt-2 mb-2">
+          <p className="text-sm font-bold uppercase underline">REKAPITULASI KEHADIRAN SISWA KELAS {selectedClass}</p>
+          <p className="text-xs">
+            Periode: {periodType === 'monthly' ? `Bulan ${selectedMonth}` : periodType === 'semester' ? `Semester ${selectedSemester} (${schoolProfile?.academicYear || '2026/2027'})` : `${startDate} s.d ${endDate}`} | Total Hari Belajar Terdata: {distinctDates.length} Hari
+          </p>
+        </div>
       </div>
 
       {/* Screen Top Header */}
@@ -378,15 +380,15 @@ export const AttendanceRecap: React.FC = () => {
           <p>Mengetahui,</p>
           <p className="font-semibold">Kepala Sekolah</p>
           <div className="h-16" />
-          <p className="font-bold underline">{schoolProfile?.principalName || 'Drs. H. Mulyadi, M.Pd.'}</p>
-          <p>NIP. {schoolProfile?.principalNip || '-'}</p>
+          <p className="font-bold underline">{schoolProfile?.principalName || 'Abdullah Mahsar, S.Pd'}</p>
+          <p>NIP. {schoolProfile?.principalNip || '198306012014121000'}</p>
         </div>
         <div>
-          <p>Kota Bandung, {formatDateIndo(new Date())}</p>
+          <p>Jember, {formatDateIndo(new Date())}</p>
           <p className="font-semibold">Wali Kelas {selectedClass}</p>
           <div className="h-16" />
-          <p className="font-bold underline">{user?.name || 'Guru Kelas'}</p>
-          <p>NIP. {user?.nip || '-'}</p>
+          <p className="font-bold underline">{user?.role === 'guru' ? user.name : 'Suci Ayu Ningrum, S.Pd'}</p>
+          <p>NIP. {user?.role === 'guru' && user?.nip ? user.nip : '199410142023212000'}</p>
         </div>
       </div>
     </div>

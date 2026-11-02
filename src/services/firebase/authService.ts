@@ -2,159 +2,177 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
-  User as FirebaseUser,
-  onAuthStateChanged,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, isFirebaseConfigured } from './firebase';
 import { UserProfile, UserRole } from '../../types';
+import { callAppsScript } from '../apps-script/appsScriptApi';
 
-// Default initial user profiles for testing
-export const MOCK_USERS: Record<string, UserProfile> = {
-  'admin@sekolah.sch.id': {
-    uid: 'mock_admin_01',
-    name: 'Administrator Utama',
-    email: 'admin@sekolah.sch.id',
+// Daftar Akun Nyata Awal SDN KESILIR 02 (Dapat ditambah & diedit di Google Sheet 'Pengguna')
+export const INITIAL_REAL_USERS: Record<string, UserProfile & { password?: string }> = {
+  'admin@sdnkesilir02.sch.id': {
+    uid: 'usr_admin_kesilir',
+    name: 'Administrator SDN Kesilir 02',
+    email: 'admin@sdnkesilir02.sch.id',
+    password: 'admin123',
     role: 'admin',
     assignedClasses: ['1', '2', '3', '4', '5', '6'],
     nip: '19800101 200501 1 001',
     active: true,
   },
-  'guru1@sekolah.sch.id': {
-    uid: 'mock_guru_01',
-    name: 'Siti Aminah, S.Pd. (Guru Kelas 1)',
-    email: 'guru1@sekolah.sch.id',
+  'suci@sdnkesilir02.sch.id': {
+    uid: 'usr_guru1_suci',
+    name: 'Suci Ayu Ningrum, S.Pd',
+    email: 'suci@sdnkesilir02.sch.id',
+    password: 'guru123',
     role: 'guru',
     assignedClasses: ['1'],
-    nip: '19850314 200902 2 003',
+    nip: '199410142023212000',
     active: true,
   },
-  'guru2@sekolah.sch.id': {
-    uid: 'mock_guru_02',
-    name: 'Budi Santoso, S.Pd. (Guru Kelas 2)',
-    email: 'guru2@sekolah.sch.id',
+  'guru1@sdnkesilir02.sch.id': {
+    uid: 'usr_guru1_suci_alias',
+    name: 'Suci Ayu Ningrum, S.Pd (Wali Kelas 1)',
+    email: 'guru1@sdnkesilir02.sch.id',
+    password: 'guru123',
     role: 'guru',
-    assignedClasses: ['2'],
-    nip: '19870820 201101 1 005',
+    assignedClasses: ['1'],
+    nip: '199410142023212000',
     active: true,
   },
-  'guru3@sekolah.sch.id': {
-    uid: 'mock_guru_03',
-    name: 'Dewi Lestari, S.Pd. (Guru Kelas 3)',
-    email: 'guru3@sekolah.sch.id',
-    role: 'guru',
-    assignedClasses: ['3'],
-    nip: '19900215 201403 2 008',
-    active: true,
-  },
-  'guru4@sekolah.sch.id': {
-    uid: 'mock_guru_04',
-    name: 'Hendra Wijaya, S.Pd. (Guru Kelas 4)',
-    email: 'guru4@sekolah.sch.id',
-    role: 'guru',
-    assignedClasses: ['4'],
-    nip: '19860611 201001 1 007',
-    active: true,
-  },
-  'guru5@sekolah.sch.id': {
-    uid: 'mock_guru_05',
-    name: 'Ratna Sari, S.Pd. (Guru Kelas 5)',
-    email: 'guru5@sekolah.sch.id',
-    role: 'guru',
-    assignedClasses: ['5'],
-    nip: '19891104 201502 2 012',
-    active: true,
-  },
-  'guru6@sekolah.sch.id': {
-    uid: 'mock_guru_06',
-    name: 'Agus Salim, M.Pd. (Guru Kelas 6)',
-    email: 'guru6@sekolah.sch.id',
-    role: 'guru',
-    assignedClasses: ['6'],
-    nip: '19820719 200801 1 004',
-    active: true,
-  },
-  'kepsek@sekolah.sch.id': {
-    uid: 'mock_kepsek_01',
-    name: 'Drs. H. Mulyadi, M.Pd. (Kepala Sekolah)',
-    email: 'kepsek@sekolah.sch.id',
+  'abdullah@sdnkesilir02.sch.id': {
+    uid: 'usr_kepsek_abdullah',
+    name: 'Abdullah Mahsar, S.Pd',
+    email: 'abdullah@sdnkesilir02.sch.id',
+    password: 'kepsek123',
     role: 'kepsek',
     assignedClasses: ['1', '2', '3', '4', '5', '6'],
-    nip: '19680512 199303 1 004',
+    nip: '198306012014121000',
+    active: true,
+  },
+  'kepsek@sdnkesilir02.sch.id': {
+    uid: 'usr_kepsek_alias',
+    name: 'Abdullah Mahsar, S.Pd (Kepala Sekolah)',
+    email: 'kepsek@sdnkesilir02.sch.id',
+    password: 'kepsek123',
+    role: 'kepsek',
+    assignedClasses: ['1', '2', '3', '4', '5', '6'],
+    nip: '198306012014121000',
     active: true,
   },
 };
 
-/**
- * Mendapatkan profil pengguna dari Firestore
- */
-export async function fetchUserProfile(uid: string, email: string): Promise<UserProfile | null> {
-  if (!isFirebaseConfigured || !db) {
-    const cachedUsers = localStorage.getItem('school_users');
-    const userMap: Record<string, UserProfile> = cachedUsers ? JSON.parse(cachedUsers) : MOCK_USERS;
-    return userMap[email.toLowerCase()] || null;
-  }
+export const MOCK_USERS = INITIAL_REAL_USERS;
 
-  try {
-    const docRef = doc(db, 'users', uid);
-    const snap = await getDoc(docRef);
-    if (snap.exists()) {
-      return snap.data() as UserProfile;
+/**
+ * Mendapatkan daftar seluruh akun (tersinkronisasi dengan Google Sheets & Local Cache)
+ */
+export function getAllUserProfiles(): Record<string, UserProfile & { password?: string }> {
+  const cached = localStorage.getItem('school_users_kesilir');
+  if (cached) {
+    try {
+      return JSON.parse(cached);
+    } catch {
+      // fallback
     }
-    // Jika belum ada di koleksi users, cek apakah ada default profil
-    const fallback = MOCK_USERS[email.toLowerCase()];
-    if (fallback) {
-      await setDoc(docRef, { ...fallback, uid });
-      return { ...fallback, uid };
-    }
-    return null;
-  } catch (error) {
-    console.error('Gagal mengambil profil pengguna dari Firestore:', error);
-    return MOCK_USERS[email.toLowerCase()] || null;
   }
+  localStorage.setItem('school_users_kesilir', JSON.stringify(INITIAL_REAL_USERS));
+  return INITIAL_REAL_USERS;
 }
 
 /**
- * Login dengan Email dan Password
+ * Menyimpan profil pengguna ke database & cache lokal
  */
-export async function loginUser(email: string, pass: string): Promise<UserProfile> {
-  const cleanEmail = email.trim().toLowerCase();
+export function saveUserProfileToCache(user: UserProfile & { password?: string }): void {
+  const users = getAllUserProfiles();
+  users[user.email.toLowerCase()] = user;
+  localStorage.setItem('school_users_kesilir', JSON.stringify(users));
+}
 
-  // Mode live Firebase
+/**
+ * Mendapatkan profil pengguna dari Firestore / Sheets
+ */
+export async function fetchUserProfile(uid: string, email: string): Promise<UserProfile | null> {
+  const all = getAllUserProfiles();
+  const found = all[email.toLowerCase()];
+  if (found) return found;
+
+  if (isFirebaseConfigured && db) {
+    try {
+      const docRef = doc(db, 'users', uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        return snap.data() as UserProfile;
+      }
+    } catch (e) {
+      console.warn('Fetch user profile Firestore error:', e);
+    }
+  }
+  return null;
+}
+
+/**
+ * Login langsung dengan Email / Nama Pengguna dan Password
+ * Memeriksa Google Sheets (via Apps Script), Firebase Authentication, dan basis data akun sekolah
+ */
+export async function loginUser(emailOrUsername: string, pass: string): Promise<UserProfile> {
+  const cleanKey = emailOrUsername.trim().toLowerCase();
+
+  // 1. Coba verifikasi langsung ke Google Sheets melalui Google Apps Script jika terhubung
+  try {
+    const gasRes = await callAppsScript<{ user: UserProfile }>('authenticateUser', {
+      email: cleanKey,
+      password: pass,
+    });
+    if (gasRes.success && gasRes.data?.user) {
+      const u = gasRes.data.user;
+      localStorage.setItem('auth_current_user', JSON.stringify(u));
+      saveUserProfileToCache(u);
+      return u;
+    }
+  } catch (gasErr) {
+    // Apps script offline atau belum deploy, lanjutkan ke auth lokal/Firebase
+  }
+
+  // 2. Coba Firebase Auth jika Firebase aktif
   if (isFirebaseConfigured && auth) {
     try {
-      const cred = await signInWithEmailAndPassword(auth, cleanEmail, pass);
-      const profile = await fetchUserProfile(cred.user.uid, cleanEmail);
-      if (!profile) {
-        throw new Error('Akun pengguna tidak memiliki data profil di sistem.');
+      const cred = await signInWithEmailAndPassword(auth, cleanKey, pass);
+      const profile = await fetchUserProfile(cred.user.uid, cleanKey);
+      if (profile) {
+        if (!profile.active) throw new Error('Akun Anda dinonaktifkan oleh Administrator.');
+        localStorage.setItem('auth_current_user', JSON.stringify(profile));
+        return profile;
       }
-      if (!profile.active) {
-        throw new Error('Akun Anda telah dinonaktifkan oleh Administrator.');
-      }
-      return profile;
-    } catch (err: any) {
-      // Jika kredensial firebase gagal, dan ada di daftar mock demo
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found') {
-        const mock = MOCK_USERS[cleanEmail];
-        if (mock && pass.length >= 6) {
-          return mock;
-        }
-      }
-      throw err;
+    } catch (fbErr: any) {
+      // Jika kredensial firebase gagal, cek akun lokal
     }
   }
 
-  // Fallback demo/preview mode
-  const mock = MOCK_USERS[cleanEmail];
-  if (mock) {
-    if (!mock.active) {
-      throw new Error('Akun Anda dinonaktifkan oleh Administrator.');
+  // 3. Verifikasi Akun Pengguna Nyata (Tersinkron dengan Google Sheets Sheet Pengguna)
+  const users = getAllUserProfiles();
+
+  // Cari berdasarkan email persis atau username (sebelum @)
+  const matchedUser = Object.values(users).find(u => {
+    const uEmail = u.email.toLowerCase();
+    const uPrefix = uEmail.split('@')[0];
+    return uEmail === cleanKey || uPrefix === cleanKey;
+  });
+
+  if (matchedUser) {
+    if (!matchedUser.active) {
+      throw new Error('Akun Anda telah dinonaktifkan oleh Administrator.');
     }
-    localStorage.setItem('auth_current_user', JSON.stringify(mock));
-    return mock;
+    // Verifikasi kata sandi
+    if (matchedUser.password && matchedUser.password !== pass) {
+      throw new Error('Kata sandi yang Anda masukkan salah.');
+    }
+
+    localStorage.setItem('auth_current_user', JSON.stringify(matchedUser));
+    return matchedUser;
   }
 
-  throw new Error('Kombinasi email atau kata sandi tidak ditemukan.');
+  throw new Error('Email atau kata sandi tidak cocok. Pastikan akun sudah didaftarkan di Google Sheets atau oleh Administrator.');
 }
 
 /**
@@ -163,7 +181,11 @@ export async function loginUser(email: string, pass: string): Promise<UserProfil
 export async function logoutUser(): Promise<void> {
   localStorage.removeItem('auth_current_user');
   if (isFirebaseConfigured && auth) {
-    await firebaseSignOut(auth);
+    try {
+      await firebaseSignOut(auth);
+    } catch (e) {
+      // Ignored
+    }
   }
 }
 
@@ -175,6 +197,5 @@ export async function requestPasswordReset(email: string): Promise<void> {
     await sendPasswordResetEmail(auth, email);
     return;
   }
-  // Fallback info
   await new Promise(r => setTimeout(r, 600));
 }

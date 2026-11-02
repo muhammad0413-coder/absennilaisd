@@ -20,6 +20,8 @@ const CONFIG = {
     SYNC_LOGS: 'Log_Sinkronisasi',
     ACTIVITY_LOGS: 'Log_Aktivitas',
     SYNC_QUEUE: 'Antrean_Sinkronisasi',
+    MONTHLY_ATTENDANCE: 'Rekap_Absensi_Bulanan',
+    DETAILED_GRADES: 'Rincian_Nilai_Semester',
   },
 
   // Struktur Folder Google Drive
@@ -73,11 +75,25 @@ function setProperty(key, value) {
 
 /**
  * Mengambil Spreadsheet Master yang aktif
+ * Mendukung pembukaan lewat SPREADSHEET_ID atau langsung dari spreadsheet aktif (Bound Script)
  */
 function getSpreadsheet() {
   const sheetId = getProperty(CONFIG.PROPERTIES.SPREADSHEET_ID);
-  if (!sheetId) {
-    throw new Error('SPREADSHEET_ID belum diatur di Script Properties!');
+  if (sheetId && sheetId.trim() !== '') {
+    try {
+      return SpreadsheetApp.openById(sheetId.trim());
+    } catch (e) {
+      Logger.log('Gagal membuka spreadsheet via ID: ' + e.message);
+    }
   }
-  return SpreadsheetApp.openById(sheetId);
+
+  // Jika skrip terikat langsung pada Google Sheet (Bound Script via Ekstensi > Apps Script)
+  try {
+    const active = SpreadsheetApp.getActiveSpreadsheet();
+    if (active) return active;
+  } catch (e) {
+    // Standalone script
+  }
+
+  throw new Error('SPREADSHEET_ID belum diatur di Script Properties dan skrip tidak dijalankan dari Google Sheets aktif.');
 }

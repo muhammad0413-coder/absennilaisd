@@ -122,3 +122,60 @@ function authorizeClassAccess(user, targetClass) {
   }
   return false;
 }
+
+/**
+ * Melakukan autentikasi langsung menggunakan Email/Username dan Password dari Google Sheets
+ * Memungkinkan Guru dan Pengguna baru dibuat atau diubah langsung di Google Sheet 'Pengguna'
+ */
+function authenticateUserService(payload) {
+  if (!payload) throw new Error('Data login tidak boleh kosong');
+  const loginKey = String(payload.email || payload.username || '').trim().toLowerCase();
+  const password = String(payload.password || '').trim();
+
+  if (!loginKey) throw new Error('Email atau nama pengguna wajib diisi');
+  if (!password) throw new Error('Kata sandi wajib diisi');
+
+  const ss = getSpreadsheet();
+  let userSheet = ss.getSheetByName(CONFIG.SHEETS.USERS);
+  if (!userSheet || userSheet.getLastRow() <= 1) {
+    initializeDatabase();
+  }
+
+  const users = readSheetData(CONFIG.SHEETS.USERS);
+  const matched = users.find(u => {
+    const email = String(u.Email || '').trim().toLowerCase();
+    const uid = String(u.User_ID || '').trim().toLowerCase();
+    const prefix = email.split('@')[0];
+    return email === loginKey || uid === loginKey || prefix === loginKey;
+  });
+
+  if (!matched) {
+    throw new Error('Akun tidak ditemukan. Pastikan akun sudah didaftarkan pada sheet Pengguna di Google Sheets.');
+  }
+
+  if (String(matched.Status || '').toLowerCase() === 'nonaktif') {
+    throw new Error('Akun Anda dinonaktifkan oleh Administrator.');
+  }
+
+  const storedPass = String(matched.Password || '').trim();
+  if (storedPass && storedPass !== password) {
+    throw new Error('Kata sandi yang Anda masukkan salah. Periksa kolom Password pada sheet Pengguna di Google Sheets.');
+  }
+
+  const assignedClasses = matched.Kelas_Ditugaskan
+    ? String(matched.Kelas_Ditugaskan).split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+
+  const userProfile = {
+    uid: matched.User_ID,
+    name: matched.Nama,
+    email: matched.Email,
+    role: matched.Role || ROLES.TEACHER,
+    assignedClasses: assignedClasses,
+    active: true,
+  };
+
+  writeActivityLog(userProfile, 'LOGIN', 'Pengguna', matched.User_ID, 'Login berhasil melalui web');
+
+  return { user: userProfile };
+}

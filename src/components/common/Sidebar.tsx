@@ -13,10 +13,10 @@ import {
   Settings,
   LogOut,
   X,
-  School,
   ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSchool } from '../../contexts/SchoolContext';
 
 export type ActiveTab =
   | 'dashboard'
@@ -44,7 +44,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { user, logout, isAdmin, isTeacher, isPrincipal } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
+  const { schoolProfile } = useSchool();
+
+  const spreadsheetUrl = schoolProfile?.spreadsheetUrl ||
+    'https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit';
 
   const menuItems = [
     {
@@ -61,9 +65,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'attendance',
-      label: 'Absensi',
+      label: 'Absensi Siswa (1–31)',
       icon: CalendarCheck2,
-      roles: ['admin', 'guru'], // Guru inputs, Admin can view/input
+      roles: ['admin', 'guru'],
     },
     {
       id: 'attendance-recap',
@@ -73,13 +77,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'grades',
-      label: 'Input Nilai',
+      label: 'Daftar Nilai Semester',
       icon: GraduationCap,
       roles: ['admin', 'guru'],
     },
     {
       id: 'grades-recap',
-      label: 'Rekap Nilai',
+      label: 'Rekap Nilai & Leger',
       icon: FileSpreadsheet,
       roles: ['admin', 'guru', 'kepsek'],
     },
@@ -97,21 +101,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'sync',
-      label: 'Sinkronisasi',
+      label: 'Sinkronisasi Data',
       icon: RefreshCw,
-      roles: ['admin'], // Admin only
+      roles: ['admin'],
     },
     {
       id: 'users',
-      label: 'Pengguna',
+      label: 'Pengguna & Guru',
       icon: UserCog,
-      roles: ['admin'], // Admin only
+      roles: ['admin'],
     },
     {
       id: 'settings',
-      label: 'Pengaturan',
+      label: 'Pengaturan Sekolah',
       icon: Settings,
-      roles: ['admin'], // Admin only
+      roles: ['admin'],
     },
   ];
 
@@ -136,14 +140,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         {/* App Branding Brand Header */}
-        <div className="h-16 px-6 flex items-center justify-between border-b border-white/10 bg-black/10">
+        <div className="h-16 px-5 flex items-center justify-between border-b border-white/10 bg-black/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-school-lightBlue flex items-center justify-center shadow-inner">
-              <School className="w-5 h-5 text-white" />
-            </div>
+            <img
+              src="/logo_sd.png"
+              alt="Logo SDN Kesilir 02"
+              className="w-8 h-8 object-contain"
+            />
             <div>
-              <span className="font-extrabold text-sm tracking-wide text-white block">SIAKAD SD</span>
-              <span className="text-[10px] text-slate-300 font-medium">Sistem Absensi & Nilai</span>
+              <span className="font-extrabold text-xs tracking-wide text-white block">
+                SDN KESILIR 02
+              </span>
+              <span className="text-[10px] text-slate-300 font-medium">
+                Wuluhan, Jember
+              </span>
             </div>
           </div>
           <button
@@ -155,8 +165,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Navigation Menus List */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
+          <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Menu Utama
           </p>
 
@@ -170,7 +180,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onSelectTab(item.id as ActiveTab);
                   onClose();
                 }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-xs transition-all ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-xs transition-all ${
                   isActive
                     ? 'bg-school-lightBlue text-white shadow-md font-semibold'
                     : 'text-slate-200 hover:bg-white/10 hover:text-white'
@@ -183,8 +193,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </nav>
 
-        {/* Bottom Actions & User Profile Card */}
+        {/* Bottom Actions & Shortcuts */}
         <div className="p-3 border-t border-white/10 bg-black/20 space-y-2">
+          {/* Link Langsung Google Sheets untuk Admin */}
+          {isAdmin && (
+            <a
+              href={spreadsheetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-bold transition shadow-xs"
+            >
+              <span className="flex items-center gap-2">
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>Google Sheets Master</span>
+              </span>
+              <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+            </a>
+          )}
+
           {/* Portal Link Shortcut */}
           <a
             href="?portal=true"
@@ -200,7 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Logout Button */}
           <button
             onClick={logout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-rose-300 hover:bg-rose-500/20 hover:text-rose-100 transition"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-300 hover:bg-rose-500/20 hover:text-rose-100 transition"
           >
             <LogOut className="w-4 h-4" />
             <span>Keluar Aplikasi</span>

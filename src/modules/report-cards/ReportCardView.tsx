@@ -22,6 +22,7 @@ import { callAppsScript } from '../../services/apps-script/appsScriptApi';
 import { Student, GradeRecord, AttendanceRecord } from '../../types';
 import { calculateFinalScore, DEFAULT_ASSESSMENT_WEIGHTS, generateCompetencyDescription } from '../../utils/calculations';
 import { getGradePredicate, formatDateIndo } from '../../utils/formatters';
+import { KopSurat } from '../../components/common/KopSurat';
 
 export const ReportCardView: React.FC = () => {
   const { user, isAdmin, isTeacher, canAccessClass } = useAuth();
@@ -174,22 +175,9 @@ export const ReportCardView: React.FC = () => {
       `Ananda ${student.name} menunjukkan perkembangan sikap dan kemampuan akademik yang baik pada Semester ${selectedSemester}. Pertahankan prestasi dan terus semangat belajar!`;
 
     return (
-      <div key={student.studentId} className="bg-white p-8 md:p-12 rounded-3xl border border-slate-200 shadow-sm max-w-4xl mx-auto text-slate-800 space-y-6 page-break">
-        {/* Kop Rapor Sekolah */}
-        <div className="border-b-4 border-double border-slate-800 pb-4 flex items-center justify-between gap-4">
-          <img src={schoolProfile?.logoUrl || '/logo.svg'} alt="Logo Sekolah" className="w-20 h-20 object-contain" />
-          <div className="text-center flex-1">
-            <h3 className="font-extrabold text-lg uppercase text-school-navy leading-tight">
-              {schoolProfile?.name || 'SD NEGERI 01 CEMARA INDAH'}
-            </h3>
-            <p className="text-xs text-slate-600 mt-1">{schoolProfile?.address}</p>
-            <p className="text-[11px] text-slate-500">
-              Desa {schoolProfile?.village}, Kec. {schoolProfile?.subdistrict}, {schoolProfile?.regency}, Prov. {schoolProfile?.province}
-            </p>
-            <p className="text-xs font-semibold text-slate-700 mt-1">NPSN: {schoolProfile?.npsn}</p>
-          </div>
-          <div className="w-20 h-20 invisible md:visible" />
-        </div>
+      <div key={student.studentId} className="bg-white p-8 md:p-12 rounded-3xl border border-slate-200 shadow-sm max-w-4xl mx-auto text-slate-800 space-y-6 page-break print-f4-portrait">
+        {/* Kop Rapor Sekolah Resmi SDN Kesilir 02 */}
+        <KopSurat className="mb-4" />
 
         {/* Judul Rapor */}
         <div className="text-center space-y-1">
@@ -197,7 +185,7 @@ export const ReportCardView: React.FC = () => {
             LAPORAN HASIL BELAJAR SISWA (RAPOR)
           </h4>
           <p className="text-xs font-semibold text-slate-600">
-            Tahun Pelajaran {schoolProfile?.academicYear} — Semester {selectedSemester === '1' ? '1 (Ganjil)' : '2 (Genap)'}
+            Tahun Pelajaran {schoolProfile?.academicYear || '2026/2027'} — Semester {selectedSemester === '1' ? '1 (Ganjil)' : '2 (Genap)'}
           </p>
         </div>
 
@@ -299,15 +287,15 @@ export const ReportCardView: React.FC = () => {
             <p>&nbsp;</p>
             <p className="font-semibold">Wali Kelas {student.class}</p>
             <div className="h-16" />
-            <p className="font-bold underline">{user?.name || 'Wali Kelas'}</p>
-            <p>NIP. {user?.nip || '-'}</p>
+            <p className="font-bold underline">{user?.role === 'guru' ? user.name : 'Suci Ayu Ningrum, S.Pd'}</p>
+            <p className="text-[10px] text-slate-600">NIP. {user?.role === 'guru' && user?.nip ? user.nip : '199410142023212000'}</p>
           </div>
           <div>
-            <p>Kota Bandung, {formatDateIndo(new Date())}</p>
+            <p>Jember, {formatDateIndo(new Date())}</p>
             <p className="font-semibold">Kepala Sekolah</p>
             <div className="h-16" />
-            <p className="font-bold underline">{schoolProfile?.principalName || 'Drs. H. Mulyadi, M.Pd.'}</p>
-            <p>NIP. {schoolProfile?.principalNip || '-'}</p>
+            <p className="font-bold underline">{schoolProfile?.principalName || 'Abdullah Mahsar, S.Pd'}</p>
+            <p className="text-[10px] text-slate-600">NIP. {schoolProfile?.principalNip || '198306012014121000'}</p>
           </div>
         </div>
       </div>

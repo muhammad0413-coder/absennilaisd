@@ -18,6 +18,7 @@ import { exportToCSV } from '../../services/export/csvExport';
 import { Student, GradeRecord } from '../../types';
 import { calculateFinalScore, DEFAULT_ASSESSMENT_WEIGHTS } from '../../utils/calculations';
 import { getGradePredicate, formatDateIndo } from '../../utils/formatters';
+import { KopSurat } from '../../components/common/KopSurat';
 
 export const GradeRecap: React.FC = () => {
   const { user, isAdmin, isTeacher, canAccessClass } = useAuth();
@@ -127,14 +128,15 @@ export const GradeRecap: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5">
-      {/* Printable Header */}
-      <div className="hidden print:block text-center border-b-2 border-black pb-3 mb-4">
-        <h2 className="text-xl font-bold uppercase">{schoolProfile?.name || 'SD NEGERI 01 CEMARA INDAH'}</h2>
-        <p className="text-xs">{schoolProfile?.address}</p>
-        <p className="text-sm font-bold mt-2 uppercase">REKAPITULASI NILAI AKHIR: {selectedSubject.toUpperCase()}</p>
-        <p className="text-xs">Kelas: {selectedClass} | Semester: {selectedSemester} | Tahun Pelajaran: {schoolProfile?.academicYear}</p>
-        <p className="text-[10px] text-slate-500">Bobot Penilaian: Formatif (20%) + Sumatif LM (30%) + STS (25%) + SAS (25%)</p>
+    <div className="space-y-5 print-f4-landscape">
+      {/* Kop Surat Resmi SDN Kesilir 02 untuk Cetak */}
+      <div className="hidden print:block mb-4">
+        <KopSurat />
+        <div className="text-center mt-2 mb-2">
+          <p className="text-sm font-bold uppercase underline">REKAPITULASI NILAI AKHIR: {selectedSubject.toUpperCase()}</p>
+          <p className="text-xs">Kelas: {selectedClass} | Semester: {selectedSemester} | Tahun Pelajaran: {schoolProfile?.academicYear || '2026/2027'}</p>
+          <p className="text-[10px] text-slate-500">Bobot Penilaian: Formatif (20%) + Sumatif LM (30%) + STS (25%) + SAS (25%)</p>
+        </div>
       </div>
 
       {/* Screen Top Header */}
@@ -171,7 +173,7 @@ export const GradeRecap: React.FC = () => {
             className="px-3 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 transition flex items-center gap-1.5 shadow-2xs"
           >
             <Printer className="w-4 h-4 text-slate-600" />
-            <span>Cetak A4</span>
+            <span>Cetak (F4 Folio)</span>
           </button>
         </div>
       </div>
@@ -321,15 +323,15 @@ export const GradeRecap: React.FC = () => {
           <p>Mengetahui,</p>
           <p className="font-semibold">Kepala Sekolah</p>
           <div className="h-16" />
-          <p className="font-bold underline">{schoolProfile?.principalName || 'Drs. H. Mulyadi, M.Pd.'}</p>
-          <p>NIP. {schoolProfile?.principalNip || '-'}</p>
+          <p className="font-bold underline">{schoolProfile?.principalName || 'Abdullah Mahsar, S.Pd'}</p>
+          <p>NIP. {schoolProfile?.principalNip || '198306012014121000'}</p>
         </div>
         <div>
-          <p>Kota Bandung, {formatDateIndo(new Date())}</p>
+          <p>Jember, {formatDateIndo(new Date())}</p>
           <p className="font-semibold">Guru Pengampu Mata Pelajaran</p>
           <div className="h-16" />
-          <p className="font-bold underline">{user?.name || 'Guru'}</p>
-          <p>NIP. {user?.nip || '-'}</p>
+          <p className="font-bold underline">{user?.role === 'guru' ? user.name : 'Suci Ayu Ningrum, S.Pd'}</p>
+          <p>NIP. {user?.role === 'guru' && user?.nip ? user.nip : '199410142023212000'}</p>
         </div>
       </div>
     </div>

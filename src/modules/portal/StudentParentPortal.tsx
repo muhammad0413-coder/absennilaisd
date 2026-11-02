@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 import { useSchool } from '../../contexts/SchoolContext';
 import { useNotification } from '../../contexts/NotificationContext';
-import { getFirestoreStudents, getFirestoreGrades, getFirestoreAttendance } from '../../services/firebase/firestoreService';
-import { Student, GradeRecord, AttendanceRecord } from '../../types';
+import { getFirestoreStudents, getFirestoreGrades, getFirestoreAttendance, getDetailedGrades } from '../../services/firebase/firestoreService';
+import { Student, GradeRecord, AttendanceRecord, StudentDetailedGrade } from '../../types';
 import { calculateFinalScore, DEFAULT_ASSESSMENT_WEIGHTS, generateCompetencyDescription } from '../../utils/calculations';
 import { getGradePredicate, formatDateIndo } from '../../utils/formatters';
 
@@ -40,6 +40,7 @@ export const StudentParentPortal: React.FC<StudentParentPortalProps> = ({ onBack
   const [currentStudent, setCurrentStudent] = useState<Student | null>(null);
   const [studentGrades, setStudentGrades] = useState<GradeRecord[]>([]);
   const [studentAttendance, setStudentAttendance] = useState<AttendanceRecord[]>([]);
+  const [myDetailedGrade, setMyDetailedGrade] = useState<StudentDetailedGrade | null>(null);
 
   const handlePortalLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,6 +91,15 @@ export const StudentParentPortal: React.FC<StudentParentPortalProps> = ({ onBack
       const allAtt = await getFirestoreAttendance(found.class);
       setStudentAttendance(allAtt.filter(a => a.studentId === found.studentId));
 
+      // Fetch Rincian Nilai Semester (Gambar 2)
+      try {
+        const dtlGrades = await getDetailedGrades(found.class, 'Matematika', (schoolProfile?.activeSemester as any) || '1');
+        const matchDtl = dtlGrades.find(d => d.studentId === found.studentId);
+        if (matchDtl) setMyDetailedGrade(matchDtl);
+      } catch (e) {
+        console.warn('Detailed grades load err:', e);
+      }
+
       setIsLoggedIn(true);
       showToast('success', 'Selamat Datang', `Portal siswa berhasil dibuka untuk: ${found.name}`);
     } catch (err: any) {
@@ -119,13 +129,13 @@ export const StudentParentPortal: React.FC<StudentParentPortalProps> = ({ onBack
       {/* Portal Top Bar */}
       <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 print:hidden shadow-xs">
         <div className="flex items-center gap-3">
-          <img src={schoolProfile?.logoUrl || '/logo.svg'} alt="Logo" className="w-8 h-8 object-contain" />
+          <img src="/logo_sd.png" alt="Logo SD" className="w-9 h-9 object-contain" />
           <div>
             <h1 className="font-extrabold text-sm md:text-base text-school-navy leading-tight">
               PORTAL SISWA & ORANG TUA
             </h1>
             <p className="text-[11px] text-slate-500 font-medium">
-              {schoolProfile?.name || 'SD NEGERI 01 CEMARA INDAH'}
+              {schoolProfile?.name || 'SEKOLAH DASAR NEGERI KESILIR 02'}
             </p>
           </div>
         </div>
@@ -328,10 +338,17 @@ export const StudentParentPortal: React.FC<StudentParentPortalProps> = ({ onBack
                     <tbody className="divide-y divide-slate-100">
                       {subjects.map((sub, idx) => {
                         const gradesForSub = studentGrades.filter(g => g.subject.toLowerCase() === sub.name.toLowerCase());
-                        const { finalScore } = calculateFinalScore(gradesForSub, DEFAULT_ASSESSMENT_WEIGHTS);
+                        let { finalScore } = calculateFinalScore(gradesForSub, DEFAULT_ASSESSMENT_WEIGHTS);
+                        
+                        // Gunakan nilai riil dari Rincian Nilai Semester (Gambar 2) jika tersedia
+                        if (sub.name.toLowerCase() === 'matematika' && myDetailedGrade?.finalScore !== null && myDetailedGrade?.finalScore !== undefined) {
+                          finalScore = myDetailedGrade.finalScore;
+                        }
+
                         const { predicate } = getGradePredicate(finalScore);
-                        const desc = gradesForSub.find(g => g.description)?.description ||
-                          generateCompetencyDescription(currentStudent.name, sub.name, finalScore);
+                        const desc = (sub.name.toLowerCase() === 'matematika' && myDetailedGrade?.formatif?.lm1?.tp1)
+                          ? `Formatif LM 1: TP1 (${myDetailedGrade.formatif.lm1.tp1}), TP2 (${myDetailedGrade.formatif.lm1.tp2 || '-'}). Ananda ${currentStudent.name} menunjukkan penguasaan materi yang sangat baik.`
+                          : (gradesForSub.find(g => g.description)?.description || generateCompetencyDescription(currentStudent.name, sub.name, finalScore));
 
                         return (
                           <tr key={sub.id} className="hover:bg-slate-50/70 transition">

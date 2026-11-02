@@ -144,10 +144,14 @@ function saveUserService(payload, user) {
   const now = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
   const userId = payload.User_ID || Utilities.getUuid().substring(0, 8);
 
+  const existingUsers = readSheetData(CONFIG.SHEETS.USERS);
+  const existing = existingUsers.find(u => u.User_ID === userId || u.Email === payload.Email);
+
   const row = {
     User_ID: userId,
     Nama: payload.Nama,
     Email: payload.Email,
+    Password: payload.Password || (existing ? existing.Password : '123456'),
     Role: payload.Role,
     Kelas_Ditugaskan: payload.Kelas_Ditugaskan || '',
     Status: payload.Status || 'Aktif',

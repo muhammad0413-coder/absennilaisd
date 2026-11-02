@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useSchool } from '../../contexts/SchoolContext';
 import { formatDateIndo } from '../../utils/formatters';
+import { KopSurat } from '../../components/common/KopSurat';
 
 interface PrintCenterProps {
   onNavigate: (tab: any) => void;
@@ -82,20 +83,21 @@ export const PrintCenter: React.FC<PrintCenterProps> = ({ onNavigate }) => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 print-f4-portrait">
       {/* Printable Executive School Report */}
-      <div className="hidden print:block text-center border-b-2 border-black pb-3 mb-6">
-        <h2 className="text-xl font-bold uppercase">{schoolProfile?.name || 'SD NEGERI 01 CEMARA INDAH'}</h2>
-        <p className="text-xs">{schoolProfile?.address}</p>
-        <p className="text-sm font-bold mt-2 uppercase">LAPORAN MONITORING & EVALUASI SEKOLAH</p>
-        <p className="text-xs">Tahun Pelajaran: {schoolProfile?.academicYear} | Semester: {schoolProfile?.activeSemester} | Tanggal Cetak: {formatDateIndo(new Date())}</p>
+      <div className="hidden print:block mb-6">
+        <KopSurat />
+        <div className="text-center mt-3 mb-2">
+          <p className="text-sm font-bold uppercase underline">LAPORAN MONITORING & EVALUASI SEKOLAH</p>
+          <p className="text-xs">Tahun Pelajaran: {schoolProfile?.academicYear || '2026/2027'} | Semester: {schoolProfile?.activeSemester || '1'} | Tanggal Cetak: {formatDateIndo(new Date())}</p>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Pusat Cetak & Arsip Laporan</h2>
           <p className="text-xs text-slate-500">
-            Akses langsung cetak format A4 portrait dan landscape sesuai standar administrasi sekolah
+            Akses langsung cetak format presisi F4 Folio Portrait & Landscape sesuai standar administrasi sekolah
           </p>
         </div>
 
@@ -149,14 +151,14 @@ export const PrintCenter: React.FC<PrintCenterProps> = ({ onNavigate }) => {
             <p>Mengetahui,</p>
             <p className="font-semibold">Kepala Sekolah</p>
             <div className="h-16" />
-            <p className="font-bold underline">{schoolProfile?.principalName || 'Drs. H. Mulyadi, M.Pd.'}</p>
-            <p>NIP. {schoolProfile?.principalNip || '-'}</p>
+            <p className="font-bold underline">{schoolProfile?.principalName || 'Abdullah Mahsar, S.Pd'}</p>
+            <p>NIP. {schoolProfile?.principalNip || '198306012014121000'}</p>
           </div>
           <div>
-            <p>Kota Bandung, {formatDateIndo(new Date())}</p>
+            <p>Jember, {formatDateIndo(new Date())}</p>
             <p className="font-semibold">Administrator Sistem</p>
             <div className="h-16" />
-            <p className="font-bold underline">{user?.name || 'Administrator'}</p>
+            <p className="font-bold underline">{user?.name || 'Administrator SDN Kesilir 02'}</p>
             <p>NIP. {user?.nip || '-'}</p>
           </div>
         </div>

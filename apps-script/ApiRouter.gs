@@ -62,6 +62,12 @@ function handleApiRoute(e, method) {
       return createJsonResponse(initResult, 'Inisialisasi Database Sheet & Drive Berhasil', true, null, requestId);
     }
 
+    // Login langsung dengan kredensial dari sheet 'Pengguna' Google Sheets
+    if (action === 'authenticateUser') {
+      const authResult = authenticateUserService(payload);
+      return createJsonResponse(authResult, 'Autentikasi akun berhasil', true, null, requestId);
+    }
+
     // Verifikasi Autentikasi untuk aksi lainnya
     const authHeader = (e && e.headers && (e.headers.Authorization || e.headers.authorization)) || payload.authHeader;
     const apiSecret = (e && e.headers && (e.headers['X-Api-Secret'] || e.headers['x-api-secret'])) || payload.apiSecret;
@@ -125,6 +131,15 @@ function handleApiRoute(e, method) {
           requestId
         );
 
+      case 'saveMonthlyAttendance':
+        return createJsonResponse(
+          saveMonthlyAttendanceService(payload, user),
+          'Rekap absensi bulanan berhasil disimpan ke Google Sheets & Firebase',
+          true,
+          null,
+          requestId
+        );
+
       case 'getAttendanceReport':
         return createJsonResponse(
           getAttendanceReportService(params.class ? params : payload, user),
@@ -139,6 +154,15 @@ function handleApiRoute(e, method) {
         return createJsonResponse(
           receiveGradesService(payload.records || payload.data, user),
           'Nilai berhasil disimpan ke Google Sheets',
+          true,
+          null,
+          requestId
+        );
+
+      case 'saveDetailedGrades':
+        return createJsonResponse(
+          saveDetailedGradesService(payload, user),
+          'Rincian nilai semester berhasil disimpan ke Google Sheets & Firebase',
           true,
           null,
           requestId
